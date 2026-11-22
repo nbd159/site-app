@@ -693,7 +693,8 @@ function dataHTML() {
     try { const e = await navigator.storage.estimate(); el.textContent = `이 앱이 쓰는 용량: 약 ${(e.usage / 1048576).toFixed(1)}MB`; } catch (er) { el.textContent = ''; }
     const pi = $('#pa-info'); if (pi) { const info = await photoArchiveInfo(+($('#pa-m') || {}).value || 6); pi.textContent = `${fmtDate(info.cut)} 이전 사진 ${info.count}장`; }
   }, 0);
-  return `<h2>백업</h2>
+  return `<h2>🩺 앱 점검</h2><div class="card"><button class="btn block" id="sc-run">점검 실행</button><div id="sc-out" style="margin-top:12px"><small class="hint">인터넷이 될 때 한 번, 비행기 모드에서 한 번 눌러 보세요. 모두 ✅면 터널에서도 쓸 수 있어요.</small></div></div>
+  <h2>백업</h2>
   <div class="card">
     <p style="margin-top:0">현재 <b>일보 ${cache.logs.length}건</b>, <b>공종 ${cache.trades.length}개</b>, <b>Lessons ${cache.journals.length}건</b>, <b>경험정리 ${cache.stars.length}건</b>이 이 기기에 있어요.<br><small class="hint">마지막 업무 백업: ${lastBackup ? new Date(lastBackup).toLocaleDateString('ko-KR') + ` (${days}일 전)` : '아직 없음'}</small><br><small class="hint" id="st-use"></small></p>
     <button class="btn block" id="d-json">💾 전체 백업 (사진 포함)</button>
@@ -714,7 +715,7 @@ function dataHTML() {
     <button class="btn ghost block" id="d-csv3" style="margin-top:8px">📈 공정률 CSV (기성관리용)</button>
     <button class="btn ghost block" id="d-csv2" style="margin-top:8px">📓 Lessons Learned CSV</button>
   </div>
-  <small class="hint">모든 데이터는 이 기기 안에만 저장되고, 내보내기 버튼을 누를 때만 파일로 나가요.</small>`;
+  <small class="hint">모든 데이터는 이 기기 안에만 저장되고, 내보내기 버튼을 누를 때만 파일로 나가요.<br>현장 기록장 버전 ${APP_VER}</small>`;
 }
 
 /* ---------- 홈 · 공정률(도넛) · 임시저장 · 공종 CSV ---------- */
@@ -1338,6 +1339,35 @@ function bindHb(on) {
   }
 }
 
+
+/* ---------- 앱 점검 (5단계) ---------- */
+const APP_VER = '1.0 (2026-11-23)';
+async function selfCheck() {
+  const out = [], add = (ok, name, msg) => out.push({ ok, name, msg });
+  const box = $('#sc-out'); if (box) box.innerHTML = '<small class="hint">점검 중…</small>';
+  try { await dbPut('meta', { k: '_check', v: Date.now(), blob: new Blob([new Uint8Array([1, 2, 3])]) }); const r = await dbGet('meta', '_check'); await dbDel('meta', '_check'); add(!!(r && r.blob && r.blob.size === 3), '기록 저장소', r && r.blob ? '저장·읽기·파일 저장 정상' : '파일 저장이 안 돼요'); }
+  catch (e) { add(false, '기록 저장소', '저장 실패: ' + e.message); }
+  const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  add(standalone ? true : null, '홈 화면 앱으로 실행', standalone ? '홈 화면 아이콘으로 실행 중' : 'Safari 창에서 실행 중이에요. 홈 화면 아이콘으로 열어야 기록이 한곳에 모여요');
+  try { const ps = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null; add(ps ? true : null, '저장 공간 보호', ps ? '기기가 기록을 지우지 않도록 보호됨' : '보호 요청이 아직 승인되지 않았어요 (홈 화면 앱으로 자주 쓰면 승인돼요). 백업을 꼭 해 두세요'); } catch (e) { }
+  try { const e = await navigator.storage.estimate(); add(true, '사용 용량', `약 ${(e.usage / 1048576).toFixed(1)}MB 사용${e.quota ? ` / 사용 가능 약 ${(e.quota / 1073741824).toFixed(1)}GB` : ''}`); } catch (e) { }
+  let swOk = false;
+  try {
+    const ctrl = navigator.serviceWorker && navigator.serviceWorker.controller, keys = window.caches ? await caches.keys() : [], name = keys.filter(k => k.startsWith('site-app-')).sort().pop();
+    let n = 0, core = false;
+    if (name) { const c = await caches.open(name), reqs = await c.keys(); n = reqs.length; const urls = reqs.map(r => r.url); core = ['index.html', 'pdf.min.mjs', 'pdf.worker.min.mjs'].every(f => urls.some(u => u.endsWith(f))); }
+    swOk = !!(ctrl && name && core);
+    add(swOk, '오프라인 준비', swOk ? `완료 (${name}, 파일 ${n}개 저장됨)` : !name ? '오프라인 파일이 아직 저장되지 않았어요. 인터넷 되는 곳에서 앱을 1분 켜 두세요' : !ctrl ? '저장은 됐지만 아직 적용 전이에요. 앱을 완전히 닫았다가 다시 여세요' : '필수 파일 일부가 빠졌어요. 인터넷 되는 곳에서 다시 열어 주세요');
+  } catch (e) { add(false, '오프라인 준비', '확인 실패: ' + e.message); }
+  try { const t = Date.now(); await getPdfLib(); add(true, 'PDF 엔진 (도면·편람)', `불러오기 정상 (${Date.now() - t}ms)`); } catch (e) { add(false, 'PDF 엔진 (도면·편람)', e.message); }
+  add(null, '인터넷 연결', navigator.onLine ? '연결됨 — 비행기 모드로 바꿔서 한 번 더 점검해 보세요' : '끊김 — 이 상태에서 위 항목이 모두 ✅면 터널에서도 쓸 수 있어요');
+  const d = lastBackup ? Math.floor((Date.now() - lastBackup) / 864e5) : null;
+  add(d !== null && d < 7 ? true : null, '백업', d === null ? '아직 백업한 적이 없어요' : `${d}일 전 백업`);
+  const hd = hbDays(); add(cache.hbs.length && hd !== null && hd < 7 ? true : null, '편람', `${cache.hbs.length}개 저장 · 개정 확인 ${hd === null ? '안 함' : hd + '일 전'}${cache.hbs.some(h => !h.indexed) ? ' · 검색 준비 안 된 편람 있음' : ''}`);
+  add(true, '데이터 현황', `일보 ${cache.logs.length} · 공종 ${cache.trades.length} · 도면 ${cache.drawings.length} · Lessons ${cache.journals.length} · 경험정리 ${cache.stars.length}`);
+  const el = $('#sc-out'); if (el) el.innerHTML = out.map(o => `<div class="kv" style="color:var(--tx);margin:0 0 8px;align-items:flex-start"><span style="flex:none;width:28px">${o.ok === true ? '✅' : o.ok === false ? '❌' : '⚠️'}</span><span style="flex:1"><b>${esc(o.name)}</b><br><small class="hint">${esc(o.msg)}</small></span></div>`).join('') + `<small class="hint">점검 시각 ${new Date().toLocaleString('ko-KR')} · 버전 ${APP_VER}</small>`;
+}
+
 /* ---------- 렌더링 · 이벤트 ---------- */
 function render() {
   $('#hd-title').textContent = TITLES[state.tab] || '';
@@ -1392,7 +1422,7 @@ function bind() {
   if (state.tab === 'draw') bindDraw(on);
   if (state.tab === 'man') bindHb(on);
   if (state.tab === 'data') {
-    on('d-json', () => exportJSON('all')); on('d-json-w', () => exportJSON('work')); on('d-json-p', () => exportJSON('personal')); on('pa-go', archivePhotos); on('pa-m', () => render(), 'change'); on('d-csv1', exportLogCSV); on('d-csv2', exportJournalCSV); on('d-csv3', exportProgCSV); 
+    on('d-json', () => exportJSON('all')); on('d-json-w', () => exportJSON('work')); on('d-json-p', () => exportJSON('personal')); on('pa-go', archivePhotos); on('sc-run', selfCheck); on('pa-m', () => render(), 'change'); on('d-csv1', exportLogCSV); on('d-csv2', exportJournalCSV); on('d-csv3', exportProgCSV); 
     on('d-import', e => { if (e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ''; }, 'change');
   }
 }
