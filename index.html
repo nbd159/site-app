@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="현장기록장">
+<title>현장 기록장</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#1f5fbf">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--tx:#1b1f24;--sub:#667085;--line:#d9dde3;--pri:#1f5fbf;--pri-tx:#fff;--warn:#b54708;--warn-bg:#fff4e5;--ok:#1a7f4b;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#14171b;--card:#1e2328;--tx:#eceff3;--sub:#9aa4b2;--line:#323a43;--pri:#5b9bff;--pri-tx:#0b1320;--warn:#ffb867;--warn-bg:#2a2216;--ok:#4cc38a;--bad:#ff7b6b}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:17px/1.5 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+main{max-width:820px;margin:0 auto;padding:14px 14px 110px}
+h2{font-size:20px;margin:6px 0 12px}
+h3{font-size:16px;margin:18px 0 8px;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:14px;color:var(--sub);margin:12px 0 4px}
+label:first-child{margin-top:0}
+input,select,textarea,button{font:inherit;color:inherit}
+input[type=text],input[type=number],input[type=date],input[type=search],select,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+textarea{min-height:84px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1;min-width:130px}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-weight:600}
+.seg button.on.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.seg button.on.diff{background:var(--bad);color:#fff;border-color:var(--bad)}
+.seg button.on.pri{background:var(--pri);color:var(--pri-tx);border-color:var(--pri)}
+.btn{display:inline-block;padding:13px 18px;border:0;border-radius:12px;background:var(--pri);color:var(--pri-tx);font-weight:700;cursor:pointer;text-align:center}
+.btn.ghost{background:transparent;color:var(--pri);border:1px solid var(--pri)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn.block{display:block;width:100%}
+.btn.sm{padding:8px 12px;font-size:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btns .btn{flex:1}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:10px 2px;border:0;background:none;font-size:12px;color:var(--sub)}
+nav button b{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--pri);font-weight:700}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:15px}
+.item{cursor:pointer}
+.item .t{font-weight:700}
+.item .m{font-size:14px;color:var(--sub);margin-top:2px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);margin-right:4px}
+.tag.bad{color:var(--bad);border-color:var(--bad)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:8px}
+.ph{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg)}
+.ph img{display:block;width:100%;height:110px;object-fit:cover}
+.ph input,.ph select{border:0;border-top:1px solid var(--line);border-radius:0;padding:8px;font-size:14px;width:100%;background:transparent}
+.ph button{width:100%;border:0;border-top:1px solid var(--line);background:transparent;color:var(--bad);padding:6px;font-size:13px}
+.rrow{display:grid;grid-template-columns:1fr 88px 88px 40px;gap:6px;margin-bottom:6px}
+.rrow input,.rrow select{padding:10px 8px}
+.rrow button{border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--bad)}
+.rhead{display:grid;grid-template-columns:1fr 88px 88px 40px;gap:6px;font-size:12px;color:var(--sub)}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--pri)}
+.pb{height:12px;background:var(--line);border-radius:6px;overflow:hidden;position:relative}
+.pb i{display:block;height:100%;background:var(--pri)}
+.pb u{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--bad)}
+.big{font-size:38px;font-weight:800;line-height:1.1}
+.kv{display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin-top:6px;gap:8px;flex-wrap:wrap}
+.pos{color:var(--ok);font-weight:700}.neg{color:var(--bad);font-weight:700}
+.chk{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:16px;color:var(--tx)}
+.chk input{width:22px;height:22px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:99px;opacity:0;transition:.2s;pointer-events:none;z-index:9}
+#toast.show{opacity:.95}
+small.hint{color:var(--sub);font-size:13px}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;background:var(--card);border-bottom:1px solid var(--line);padding:8px 14px;padding-top:calc(8px + env(safe-area-inset-top))}
+header button{border:1px solid var(--line);background:var(--bg);border-radius:12px;width:48px;height:44px;font-size:22px}
+header b{font-size:18px}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:112px;border:1px solid var(--line);border-radius:16px;background:var(--card);font-size:18px;font-weight:700;cursor:pointer}
+.tile span{font-size:34px}
+.sumrow{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.sumrow .card{margin-bottom:0}
+.dn{display:flex;align-items:center;gap:14px}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.dgrid .card{margin-bottom:0}
+.vw{position:fixed;inset:0;z-index:20;background:#2b2f36;display:flex;flex-direction:column;color:#fff;touch-action:none}
+.vbar,.vtools{display:flex;align-items:center;gap:6px;padding:6px 8px;background:#1b1f24;flex-wrap:wrap}
+.vbar{padding-top:calc(6px + env(safe-area-inset-top))}
+.vtools{padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+.vt{flex:1;min-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vb{min-width:44px;min-height:44px;border:1px solid #444b55;border-radius:10px;background:#2b2f36;color:#fff;font-size:18px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 6px}
+.vb small{font-size:10px;color:#aab}
+.vb.on{background:#1f5fbf;border-color:#5b9bff}
+.vc::before{content:"";width:20px;height:20px;border-radius:50%;background:var(--c);border:2px solid #fff}
+.vsel{width:auto;min-height:44px;border-radius:10px;background:#2b2f36;color:#fff;border:1px solid #444b55;padding:0 8px;font-size:15px}
+.vpg{min-width:56px;text-align:center}
+.vsep{width:1px;height:30px;background:#444b55;margin:0 2px}
+.vstage{flex:1;position:relative;overflow:hidden;touch-action:none}
+#vwrap{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#vwrap canvas{position:absolute;left:0;top:0;display:block}
+#vpdf{box-shadow:0 2px 12px rgba(0,0,0,.5);background:#fff}
+.vtoc{position:absolute;right:8px;top:8px;bottom:8px;width:min(360px,85%);overflow:auto;background:#1b1f24ee;border:1px solid #444b55;border-radius:12px;padding:10px;z-index:3}
+.vtoc-i{display:flex;justify-content:space-between;gap:8px;width:100%;min-height:44px;text-align:left;background:none;border:0;border-bottom:1px solid #333a44;color:#fff;font-size:15px;padding:6px 4px;white-space:pre}
+.vtoc-i small{color:#aab}
+mark{background:#ffe066;color:#000;border-radius:3px}
+</style>
+</head>
+<body>
+<header><button id="hd-home" aria-label="홈">🏠</button><b id="hd-title">홈</b></header>
+<main id="app"></main>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ---------- 유틸 ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const pad = n => String(n).padStart(2, '0');
+const today = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+const DOW = ['일','월','화','수','목','금','토'];
+const fmtDate = s => { const [y,m,d] = s.split('-').map(Number); return `${m}/${d}(${DOW[new Date(y, m - 1, d).getDay()]})`; };
+const pct = x => (x * 100).toFixed(1) + '%';
+const num = v => (v === '' || v == null || isNaN(+v)) ? 0 : +v;
+const fmtN = v => { const n = Math.round(num(v) * 100) / 100; return n.toLocaleString('ko-KR'); };
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1800); }
+
+/* ---------- 저장소 (IndexedDB, 기기 내부에만 저장) ---------- */
+let db = null, dbError = '';
+const STORES = ['logs', 'journals', 'photos', 'trades', 'drawings', 'manuals', 'stars', 'specs', 'files', 'hbs'];
+function openDB() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB 미지원'));
+    const r = indexedDB.open('site-log', 5);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      STORES.forEach(n => { if (!d.objectStoreNames.contains(n)) d.createObjectStore(n, { keyPath: 'id' }); });
+      if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'k' });
+      if (!d.objectStoreNames.contains('annots')) d.createObjectStore('annots', { keyPath: 'k' });
+      if (!d.objectStoreNames.contains('hbtext')) d.createObjectStore('hbtext', { keyPath: 'k' });
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.onblocked = () => rej(new Error('blocked'));
+  });
+}
+const store = (s, m = 'readonly') => db.transaction(s, m).objectStore(s);
+const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const dbAll = s => req(store(s).getAll());
+const dbGet = (s, k) => req(store(s).get(k));
+const dbPut = (s, v) => req(store(s, 'readwrite').put(v));
+const dbDel = (s, k) => req(store(s, 'readwrite').delete(k));
+
+const cache = { logs: [], journals: [], trades: [], drawings: [], manuals: [], stars: [], specs: [], hbs: [] };
+let hbChecked = 0;
+async function reload() {
+  const byDate = (a, b) => (b.date.localeCompare(a.date)) || ((b.updatedAt || 0) - (a.updatedAt || 0));
+  const byCreated = (a, b) => (a.createdAt || 0) - (b.createdAt || 0);
+  cache.logs = (await dbAll('logs')).sort(byDate);
+  cache.journals = (await dbAll('journals')).sort(byDate);
+  cache.trades = (await dbAll('trades')).sort(byCreated);
+  cache.drawings = (await dbAll('drawings')).sort(byCreated);
+  cache.manuals = (await dbAll('manuals')).sort(byCreated);
+  cache.stars = (await dbAll('stars')).sort(byCreated);
+  cache.specs = await dbAll('specs');
+  cache.hbs = await dbAll('hbs');
+}
+const tradeName = id => { const t = cache.trades.find(x => x.id === id); return t ? t.name : '(삭제된 공종)'; };
+
+/* ---------- 상태 ---------- */
+const state = { tab: 'home', sub: 'input', q: '', tagFilter: '', onlyStar: false, mtab: 'trades', cut: '' };
+let form = null, jform = null, mform = null, lastBackup = 0;
+const TAGS = ['안전', '품질', '시공', '소통·보고', '서류·기록', '시간관리', '기타'];
+const KINDS = ['시공전', '시공중', '시공후', '검측', '안전', '특이', '기타'];
+const WEATHER = ['', '맑음', '흐림', '비', '눈', '기타'];
+
+/* ---------- 공정률 계산 ---------- */
+function calcProgress(cut) {
+  const sums = {};
+  for (const l of cache.logs) for (const r of (l.results || [])) {
+    if (cut && l.date > cut) continue;
+    const s = sums[r.tradeId] || (sums[r.tradeId] = { i: 0, s: 0, last: '' });
+    s.i += num(r.inQty); s.s += num(r.setQty); if (l.date > s.last) s.last = l.date;
+  }
+  return cache.trades.map(t => {
+    const s = sums[t.id] || { i: 0, s: 0, last: '' };
+    const cin = num(t.prevIn) + s.i, cset = num(t.prevSet) + s.s, q = num(t.qty);
+    const rin = q ? Math.min(1, cin / q) : 0, rset = q ? Math.min(1, cset / q) : 0;
+    const wi = num(t.wIn), ws = num(t.wSet), wsum = wi + ws;
+    const rate = wsum ? (rin * wi + rset * ws) / wsum : 0;
+    return { t, cin, cset, rin, rset, rate, plan: num(t.plan) / 100, last: s.last };
+  });
+}
+function overall(rows) {
+  const w = rows.reduce((a, r) => a + num(r.t.wAll), 0);
+  if (!w) return { w: 0, act: 0, plan: 0 };
+  return { w, act: rows.reduce((a, r) => a + num(r.t.wAll) * r.rate, 0) / w, plan: rows.reduce((a, r) => a + num(r.t.wAll) * r.plan, 0) / w };
+}
+
+/* ---------- 사진 ---------- */
+function shrink(file, max = 1280) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      let w = im.naturalWidth, h = im.naturalHeight;
+      const k = Math.min(1, max / Math.max(w, h));
+      w = Math.round(w * k); h = Math.round(h * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(im, 0, 0, w, h);
+      c.toBlob(b => { URL.revokeObjectURL(u); b ? res(b) : rej(new Error('변환 실패')); }, 'image/jpeg', 0.8);
+    };
+    im.onerror = () => { URL.revokeObjectURL(u); rej(new Error('이미지 오류')); };
+    im.src = u;
+  });
+}
+
+/* ---------- 일보 입력 ---------- */
+async function startLog(id) {
+  let log, photos = [];
+  if (id) {
+    log = await dbGet('logs', id);
+    log.results = log.results || [];
+    for (const pid of (log.photoIds || [])) {
+      const ph = await dbGet('photos', pid);
+      if (ph) photos.push({ id: ph.id, blob: ph.blob, caption: ph.caption || '', kind: ph.kind || '', url: URL.createObjectURL(ph.blob) });
+    }
+  } else {
+    log = { id: uid(), date: today(), weather: '', crew: '', section: '', progress: '', results: cache.trades.length ? [{ tradeId: '', inQty: '', setQty: '' }] : [], drawing: '', drawingNote: '', special: '', photoIds: [] };
+  }
+  if (!id) {
+    let d = null; try { d = db ? await dbGet('meta', 'draft') : null; } catch (e) { /* 무시 */ }
+    if (d && d.log) {
+      log = d.log;
+      photos = (d.photos || []).map(p => ({ id: p.id, blob: p.blob, caption: p.caption || '', kind: p.kind || '', url: URL.createObjectURL(p.blob) }));
+      toast('작성 중이던 일보를 복구했어요');
+    }
+  }
+  form = { log, isNew: !id, photos, removed: [] };
+  state.tab = 'log'; state.sub = 'input';
+  render(); window.scrollTo(0, 0);
+}
+function collectLog() {
+  if (!form) return;
+  const l = form.log, g = id => { const e = $('#' + id); return e ? e.value.trim() : ''; };
+  if (!$('#f-date')) return;
+  l.date = $('#f-date').value || l.date;
+  l.weather = g('f-weather'); l.crew = g('f-crew'); l.section = g('f-section');
+  l.progress = g('f-progress'); l.drawingNote = g('f-dnote'); l.special = g('f-special');
+  l.results = [...document.querySelectorAll('.rrow')].map(r => ({ tradeId: r.querySelector('.r-trade').value, inQty: r.querySelector('.r-in').value, setQty: r.querySelector('.r-set').value }));
+  document.querySelectorAll('.ph').forEach((e, i) => { if (form.photos[i]) { form.photos[i].caption = e.querySelector('.cap').value; form.photos[i].kind = e.querySelector('.kind').value; } });
+}
+function photosHTML() {
+  return form.photos.map((p, i) => `<div class="ph"><img src="${p.url}" alt=""><select class="kind"><option value="">구분 선택</option>${KINDS.map(k => `<option ${p.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select><input class="cap" type="text" placeholder="위치·내용 메모" value="${esc(p.caption)}"><button data-rm="${i}">삭제</button></div>`).join('');
+}
+function resRowsHTML() {
+  const rows = form.log.results || [];
+  if (!cache.trades.length) return '<small class="hint">공종마스터가 비어 있어요. 📚 자료 탭에서 공종을 먼저 등록하면 여기서 실적을 입력할 수 있어요.</small>';
+  const opt = (t, sel) => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)}${t.unit ? ' (' + esc(t.unit) + ')' : ''}</option>`;
+  const opts = sel => {
+    const groups = {};
+    cache.trades.forEach(t => { const g = t.code ? t.code.split('_')[0] : ''; (groups[g] = groups[g] || []).push(t); });
+    const keys = Object.keys(groups);
+    if (keys.length === 1 && !keys[0]) return groups[''].map(t => opt(t, sel)).join('');
+    return keys.map(g => `<optgroup label="${esc(g || '기타')}">${groups[g].map(t => opt(t, sel)).join('')}</optgroup>`).join('');
+  };
+  return '<div class="rhead"><span>공종</span><span>반입</span><span>설치</span><span></span></div>' + rows.map((r, i) => `<div class="rrow"><select class="r-trade"><option value="">공종 선택</option>${opts(r.tradeId)}</select><input class="r-in" type="number" inputmode="decimal" placeholder="0" value="${esc(r.inQty)}"><input class="r-set" type="number" inputmode="decimal" placeholder="0" value="${esc(r.setQty)}"><button type="button" data-rr="${i}">✕</button></div>`).join('') + '<button type="button" class="btn ghost sm" id="f-addres" style="margin-top:4px">＋ 공종 실적 추가</button>';
+}
+function logFormHTML() {
+  const l = form.log;
+  if (form.isNew && cache.trades.length && !(l.results || []).length) l.results = [{ tradeId: '', inQty: '', setQty: '' }];
+  return `
+  <h2>${form.isNew ? '오늘 작업일보' : '일보 수정'}</h2>
+  <div class="card">
+    <label>날짜</label><input id="f-date" type="date" value="${esc(l.date)}">
+    <div class="row">
+      <div><label>날씨</label><select id="f-weather">${WEATHER.map(w => `<option ${l.weather === w ? 'selected' : ''}>${w}</option>`).join('')}</select></div>
+      <div><label>투입인원(명)</label><input id="f-crew" type="number" inputmode="numeric" value="${esc(l.crew)}"></div>
+      <div><label>구간 / STA</label><input id="f-section" type="text" placeholder="예: 1+250~1+270" value="${esc(l.section)}"></div>
+    </div>
+    <label>작업내용</label><textarea id="f-progress" placeholder="예: 신호케이블 포설, 전철주 기초 타설">${esc(l.progress)}</textarea>
+    <label>실적상세 (오늘 반입·설치 수량)</label>
+    <div id="res">${resRowsHTML()}</div>
+    <label>도면과 비교</label>
+    <div class="seg">
+      <button type="button" data-dw="ok" class="ok ${l.drawing === 'ok' ? 'on' : ''}">✔ 도면과 일치</button>
+      <button type="button" data-dw="diff" class="diff ${l.drawing === 'diff' ? 'on' : ''}">⚠ 차이 있음</button>
+    </div>
+    <input id="f-dnote" type="text" style="margin-top:8px" placeholder="도면 번호 / 차이 내용 (도면 파일은 넣지 않아요)" value="${esc(l.drawingNote)}">
+    <label>특이사항 · 히스토리</label><textarea id="f-special" placeholder="지시사항, 민원, 사고·아차사고, 설계변경, 협의 내용 등">${esc(l.special)}</textarea>
+    <label>작업사진</label>
+    <label class="btn ghost block" style="margin:0">📷 사진 촬영 / 선택<input id="f-file" type="file" accept="image/*" multiple style="display:none"></label>
+    <div id="photos" class="photos">${photosHTML()}</div>
+    <small class="hint">사진은 이 기기 안에만 저장돼요. 용량 절약을 위해 자동으로 줄여서 저장해요.</small>
+    <div class="btns">
+      <button class="btn" id="f-save">저장</button>
+      ${form.isNew ? '' : '<button class="btn ghost" id="f-new">새 일보</button><button class="btn danger" id="f-del">삭제</button>'}
+    </div>
+  </div>`;
+}
+async function saveLog() {
+  collectLog();
+  const l = form.log;
+  l.results = (l.results || []).filter(r => r.tradeId || r.inQty || r.setQty);
+  if (l.results.some(r => !r.tradeId)) return toast('수량을 입력한 줄은 공종을 선택해 주세요');
+  if (!l.progress && !l.special && !l.drawingNote && !l.results.length && !form.photos.length) return toast('내용을 입력해 주세요');
+  try {
+    l.photoIds = form.photos.map(p => p.id);
+    for (const p of form.photos) await dbPut('photos', { id: p.id, blob: p.blob, caption: p.caption, kind: p.kind, logId: l.id });
+    for (const rid of form.removed) await dbDel('photos', rid);
+    l.updatedAt = Date.now(); l.createdAt = l.createdAt || l.updatedAt;
+    await dbPut('logs', l); await reload();
+    try { await dbDel('meta', 'draft'); } catch (e) { /* 무시 */ }
+    toast('저장했어요 ✔'); startLog();
+  } catch (e) { toast('저장 실패: ' + e.message); }
+}
+async function deleteLog() {
+  if (!confirm('이 일보를 삭제할까요? 공정률 누계에서도 빠져요. 되돌릴 수 없어요.')) return;
+  for (const p of form.log.photoIds || []) await dbDel('photos', p);
+  await dbDel('logs', form.log.id);
+  await reload(); toast('삭제했어요'); startLog();
+}
+
+/* ---------- 일보 목록 ---------- */
+function listHTML() {
+  const q = state.q.toLowerCase();
+  const rows = cache.logs.filter(l => !q || [l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' ')].join(' ').toLowerCase().includes(q));
+  return `<h2>일보 목록 <small class="hint">(${rows.length}건)</small></h2>
+  <input id="q" type="search" placeholder="공종, 구간, 특이사항 검색" value="${esc(state.q)}" style="margin-bottom:12px">
+  ${rows.map(l => {
+    const names = [...new Set((l.results || []).map(r => tradeName(r.tradeId)))].join(', ') || l.trade || '(공종 없음)';
+    return `<div class="card item" data-open="${l.id}">
+    <div class="t">${fmtDate(l.date)} · ${esc(names)} ${l.section ? '· ' + esc(l.section) : ''}</div>
+    <div class="m">${esc((l.progress || '').slice(0, 80))}</div>
+    <div style="margin-top:6px">${l.crew ? `<span class="tag">👷 ${esc(l.crew)}명</span>` : ''}${l.drawing === 'ok' ? '<span class="tag ok">도면 일치</span>' : ''}${l.drawing === 'diff' ? '<span class="tag bad">도면 차이</span>' : ''}${l.special ? '<span class="tag">특이사항</span>' : ''}${(l.photoIds || []).length ? `<span class="tag">📷 ${l.photoIds.length}</span>` : ''}${l.archived ? `<span class="tag">📦 사진 ${l.archived}장 백업됨</span>` : ''}</div>
+  </div>`; }).join('') || '<div class="card"><small class="hint">아직 일보가 없어요. 입력 탭에서 첫 일보를 남겨 보세요.</small></div>'}`;
+}
+function logTabHTML() {
+  return `<div class="seg" style="margin-bottom:12px"><button data-sub="input" class="${state.sub === 'input' ? 'on pri' : ''}">입력</button><button data-sub="list" class="${state.sub === 'list' ? 'on pri' : ''}">목록 (${cache.logs.length})</button></div>` + (state.sub === 'list' ? listHTML() : logFormHTML());
+}
+
+/* ---------- 공정률 ---------- */
+/* ---------- 자료 (공종마스터 · 도면 · 편람) ---------- */
+const MASTERS = {
+  trades: { label: '공종마스터', fields: [['name', '세부공종명', 'text'], ['unit', '단위', 'text'], ['qty', '계약수량', 'number'], ['wAll', '전체 가중치(%)', 'number'], ['wIn', '반입 가중치(%)', 'number'], ['wSet', '설치 가중치(%)', 'number'], ['prevIn', '기존 반입누계 (앱 사용 전까지)', 'number'], ['prevSet', '기존 설치누계 (앱 사용 전까지)', 'number'], ['plan', '계획공종률(%) — 기준일 현재', 'number'], ['code', '상세ID', 'text']], title: r => (r.code ? '[' + r.code + '] ' : '') + r.name, sub: r => `${r.unit || ''} · 계약 ${fmtN(r.qty)} · 가중치 ${fmtN(r.wAll)}% (반입 ${fmtN(r.wIn)} / 설치 ${fmtN(r.wSet)})`, hint: '반입·설치를 구분하지 않는 공종은 설치 가중치에 100, 반입 가중치에 0을 넣으면 돼요.' },
+  drawings: { label: '도면', fields: [['no', '도면번호', 'text'], ['name', '도면명', 'text'], ['rev', '개정(Rev)', 'text'], ['note', '비고', 'area']], title: r => `${r.no || ''} ${r.name || ''}`, sub: r => `${r.rev ? 'Rev.' + r.rev + ' · ' : ''}${(r.note || '').slice(0, 60)}`, hint: '⚠ 도면 파일·이미지는 넣지 마세요. 번호와 개정 정보만 기록해 보안 규정을 지켜요.' },
+  manuals: { label: '편람', fields: [['title', '제목', 'text'], ['cat', '분류', 'select', ['안전', '품질', '시공', '절차', '기타']], ['body', '내용', 'area']], title: r => r.title, sub: r => `${r.cat ? '[' + r.cat + '] ' : ''}${(r.body || '').slice(0, 60)}`, hint: '체크리스트, 시공 기준, 절차 등 현장에서 자주 보는 내용을 적어 두세요.' }
+};
+function refHTML() {
+  const cfg = MASTERS[state.mtab], list = cache[state.mtab];
+  const tabs = `<div class="seg" style="margin-bottom:12px">${Object.keys(MASTERS).map(k => `<button data-mt="${k}" class="${state.mtab === k ? 'on pri' : ''}">${MASTERS[k].label}</button>`).join('')}</div>`;
+  if (mform) {
+    const r = mform.rec;
+    return tabs + `<div class="card"><h2 style="margin-top:0">${cfg.label} ${mform.isNew ? '추가' : '수정'}</h2>
+    ${cfg.fields.map(([k, lab, type, opts]) => `<label>${lab}</label>` + (type === 'area' ? `<textarea id="m-${k}">${esc(r[k])}</textarea>` : type === 'select' ? `<select id="m-${k}"><option value=""></option>${opts.map(o => `<option ${r[k] === o ? 'selected' : ''}>${o}</option>`).join('')}</select>` : `<input id="m-${k}" type="${type}" ${type === 'number' ? 'inputmode="decimal"' : ''} value="${esc(r[k])}">`)).join('')}
+    <div class="btns"><button class="btn" id="m-save">저장</button><button class="btn ghost" id="m-cancel">취소</button>${mform.isNew ? '' : '<button class="btn danger" id="m-del">삭제</button>'}</div></div>`;
+  }
+  return tabs + `<button class="btn block" id="m-add" style="margin-bottom:12px">＋ ${cfg.label} 추가</button>
+  <small class="hint">${cfg.hint}</small><div style="height:8px"></div>
+  ${list.map(r => `<div class="card item" data-medit="${r.id}"><div class="t">${esc(cfg.title(r))}</div><div class="m">${esc(cfg.sub(r))}</div></div>`).join('') || `<div class="card"><small class="hint">아직 등록된 ${cfg.label}이(가) 없어요.</small></div>`}`;
+}
+function newMaster() { mform = { isNew: true, rec: { id: uid() } }; render(); window.scrollTo(0, 0); }
+async function saveMaster() {
+  const cfg = MASTERS[state.mtab], rec = mform.rec;
+  for (const [k, , type] of cfg.fields) { const v = ($('#m-' + k) || {}).value || ''; rec[k] = type === 'number' ? (v.trim() === '' ? '' : Number(v)) : v.trim(); }
+  if (!rec[cfg.fields[0][0]]) return toast(cfg.fields[0][1] + '을(를) 입력해 주세요');
+  rec.updatedAt = Date.now(); rec.createdAt = rec.createdAt || rec.updatedAt;
+  await dbPut(state.mtab, rec); await reload(); mform = null; toast('저장했어요 ✔'); render();
+}
+
+/* ---------- Lessons Learned (개인 기록) ---------- */
+const DEF_STAR = [
+  { k: 'skill', l: '① 어필 역량 / 주요 경험', h: '자소서에 어필할 역량과, 그 근거가 되는 경험 하나' },
+  { k: 's', l: '② S (상황)', h: '언제, 무엇을 한 경험인가요? 왜 했나요?' },
+  { k: 't', l: '③ T (과제 / 목표)', h: '내가 맡은 역할, 해결해야 할 과제나 문제는 무엇이었나요?' },
+  { k: 'a', l: '④ A (역할 / 행동)', h: '어떤 계획과 행동을 했나요? 남과 다른 점, 우선순위는?' },
+  { k: 'r', l: '⑤ R (결과, 성과)', h: '객관적 사실·수치, 주변 반응, 다시 한다면 어떻게?' },
+  { k: 'learn', l: '⑥ 배운 점', h: '깨달은 점, 입사 후 업무에 적용할 점' }
+];
+const COMPS = ['직무 경험', '문제해결', '협업·소통', '실수와 극복', '성실·책임', '안전의식', '기타'];
+const LL_TABS = [['write', '✏️ 기록'], ['list', '목록'], ['cal', '달력'], ['review', '월간 회고'], ['star', '⭐ 경험정리표'], ['spec', '스펙이력']];
+let starTpl = DEF_STAR.map(f => Object.assign({}, f));
+let sform = null, spform = null, tplDraft = null;
+const ym = d => d.slice(0, 7);
+const ymLabel = s => { const [y, m] = s.split('-'); return `${y}년 ${+m}월`; };
+const shiftYM = (s, n) => { const [y, m] = s.split('-').map(Number); const d = new Date(y, m - 1 + n, 1); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+
+function newJournal(j) { jform = j || { id: uid(), date: today(), did: '', lesson: '', growth: '', mistake: '', tag: '', next: '', resume: '', star: false }; }
+function journalHTML() {
+  if (!state.ll) state.ll = 'write';
+  const seg = `<div class="seg" style="margin-bottom:12px;flex-wrap:wrap">${LL_TABS.map(([k, l]) => `<button data-ll="${k}" class="${state.ll === k ? 'on pri' : ''}" style="min-width:96px">${l}</button>`).join('')}</div>`;
+  const body = { write: llWriteHTML, list: llListHTML, cal: llCalHTML, review: llReviewHTML, star: llStarHTML, spec: llSpecHTML, tpl: llTplHTML }[state.ll]();
+  return seg + body;
+}
+function llWriteHTML() {
+  const j = jform, isEdit = !!j.createdAt;
+  const ta = (id, lab, ph, v) => `<label>${lab}</label><textarea id="${id}" placeholder="${ph}">${esc(v)}</textarea>`;
+  return `<h2>${isEdit ? '기록 수정' : '오늘의 Lessons Learned'}</h2>
+  <div class="card">
+    <label>일자</label><input id="j-date" type="date" value="${esc(j.date)}">
+    ${ta('j-did', '진행업무', '오늘 맡아서 진행한 일 (예: 케이블트레이 반입 검수, 기성 서류 작성)', j.did)}
+    ${ta('j-lesson', '오늘의 배운점', '새로 알게 된 것, 다음에도 쓸 수 있는 한 줄 교훈', j.lesson)}
+    ${ta('j-growth', '잘한 점 · 성장한 점', '처음 해본 것, 예전보다 나아진 것, 칭찬받은 것 (선택)', j.growth)}
+    ${ta('j-mistake', '아쉬운점 · 실수', '없으면 비워도 돼요', j.mistake)}
+    <label>실수 분류</label><select id="j-tag"><option value="">선택 안 함</option>${TAGS.map(t => `<option ${j.tag === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    ${ta('j-next', '다음에는 이렇게 한다', '구체적인 행동 (예: 반입 전 규격표를 사진으로 먼저 받는다)', j.next)}
+    ${ta('j-resume', '자소서에 기록할 점', '자소서·면접에 쓸 만한 장면, 수치, 주변 반응', j.resume)}
+    <label class="chk"><input id="j-star" type="checkbox" ${j.star ? 'checked' : ''}> ⭐ 경험정리표로 정리할 경험</label>
+    <div class="btns"><button class="btn" id="j-save">저장</button>${isEdit ? `${j.star ? '<button class="btn ghost" id="j-tostar">⭐ 경험정리표로 옮기기</button>' : ''}<button class="btn ghost" id="j-new">새 기록</button><button class="btn danger" id="j-del">삭제</button>` : ''}</div>
+  </div>
+  ${tagStatsHTML(cache.journals.filter(x => x.date >= dayShift(-30)), '최근 30일 실수 분류 (반복되는 실수 찾기)')}`;
+}
+function dayShift(n) { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function tagStatsHTML(list, title) {
+  const cnt = {}; list.filter(x => x.mistake && x.tag).forEach(x => cnt[x.tag] = (cnt[x.tag] || 0) + 1);
+  const ent = Object.entries(cnt).sort((a, b) => b[1] - a[1]), max = Math.max(1, ...Object.values(cnt));
+  return `<h3>${title}</h3><div class="card">${ent.length ? (ent[0][1] >= 2 ? `<p style="margin-top:0">🔁 가장 많이 반복된 실수: <b>${esc(ent[0][0])}</b> (${ent[0][1]}회)</p>` : '') + ent.map(([k, v]) => `<div class="bar"><span style="width:84px">${esc(k)}</span><i style="width:${Math.round(v / max * 60) + 4}%"></i><span>${v}</span></div>`).join('') : '<small class="hint">실수를 분류해서 기록하면 여기에 반복되는 패턴이 보여요.</small>'}</div>`;
+}
+function jCard(x) {
+  return `<div class="card item" data-jopen="${x.id}">
+    <div class="t">${fmtDate(x.date)} ${x.star ? '⭐' : ''} ${x.tag ? `<span class="tag bad">${esc(x.tag)}</span>` : ''}</div>
+    ${x.did ? `<div class="m">📋 ${esc(x.did.slice(0, 70))}</div>` : ''}
+    ${x.lesson ? `<div class="m">💡 ${esc(x.lesson.slice(0, 90))}</div>` : ''}
+    ${x.next ? `<div class="m">→ ${esc(x.next.slice(0, 90))}</div>` : ''}
+  </div>`;
+}
+function llListHTML() {
+  const q = (state.jq || '').toLowerCase();
+  const list = cache.journals.filter(x => (!state.tagFilter || x.tag === state.tagFilter) && (!state.onlyStar || x.star) && (!q || [x.did, x.lesson, x.growth, x.mistake, x.next, x.resume].join(' ').toLowerCase().includes(q)));
+  return `<h2>기록 목록 <small class="hint">(${list.length}건)</small></h2>
+  <input id="j-q" type="search" placeholder="내용 검색" value="${esc(state.jq || '')}" style="margin-bottom:10px">
+  <div class="row" style="margin-bottom:10px">
+    <select id="j-filter"><option value="">전체 분류</option>${TAGS.map(t => `<option ${state.tagFilter === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+    <label class="chk" style="margin:0"><input id="j-onlystar" type="checkbox" ${state.onlyStar ? 'checked' : ''}> ⭐만 보기</label>
+  </div>
+  ${list.map(jCard).join('') || '<div class="card"><small class="hint">해당하는 기록이 없어요.</small></div>'}`;
+}
+function llCalHTML() {
+  const m = state.calM || ym(today()), [y, mo] = m.split('-').map(Number);
+  const first = new Date(y, mo - 1, 1).getDay(), days = new Date(y, mo, 0).getDate();
+  const byDay = {}; cache.journals.filter(x => ym(x.date) === m).forEach(x => (byDay[x.date] = byDay[x.date] || []).push(x));
+  let cells = DOW.map(d => `<div style="text-align:center;font-size:13px;color:var(--sub)">${d}</div>`).join('');
+  for (let i = 0; i < first; i++) cells += '<div></div>';
+  for (let d = 1; d <= days; d++) {
+    const ds = `${m}-${pad(d)}`, e = byDay[ds] || [], sel = state.calD === ds;
+    cells += `<button data-cd="${ds}" style="min-height:52px;border:1px solid ${sel ? 'var(--pri)' : 'var(--line)'};border-radius:10px;background:${e.length ? 'var(--warn-bg)' : 'var(--bg)'};font-weight:${ds === today() ? 800 : 400}">${d}<br><small>${e.length ? (e.some(x => x.star) ? '⭐' : '●') : ''}</small></button>`;
+  }
+  const dayList = state.calD && ym(state.calD) === m ? (byDay[state.calD] || []) : [];
+  return `<div class="row" style="align-items:center;margin-bottom:10px"><button class="btn ghost sm" data-cm="-1" style="flex:none">◀</button><h2 style="margin:0;text-align:center">${ymLabel(m)}</h2><button class="btn ghost sm" data-cm="1" style="flex:none">▶</button></div>
+  <div class="card"><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">${cells}</div><small class="hint">● 기록 있음 · ⭐ 경험정리 표시 · 날짜를 누르면 그날 기록이 아래에 보여요</small></div>
+  ${state.calD ? `<h3>${fmtDate(state.calD)}</h3>${dayList.map(jCard).join('') || `<div class="card"><small class="hint">이날 기록이 없어요.</small><div class="btns"><button class="btn ghost" id="cal-write">이날 기록 쓰기</button></div></div>`}` : ''}`;
+}
+function llReviewHTML() {
+  const m = state.revM || ym(today()), list = cache.journals.filter(x => ym(x.date) === m);
+  const rv = state.revMemo && state.revMemo.m === m ? state.revMemo.v : '';
+  return `<div class="row" style="align-items:center;margin-bottom:10px"><button class="btn ghost sm" data-rm2="-1" style="flex:none">◀</button><h2 style="margin:0;text-align:center">${ymLabel(m)} 회고</h2><button class="btn ghost sm" data-rm2="1" style="flex:none">▶</button></div>
+  <div class="sumrow"><div class="card"><div class="kv" style="margin:0">기록한 날</div><div class="big" style="font-size:30px">${new Set(list.map(x => x.date)).size}일</div></div><div class="card"><div class="kv" style="margin:0">⭐ 경험 / 실수 기록</div><div class="big" style="font-size:30px">${list.filter(x => x.star).length} / ${list.filter(x => x.mistake).length}</div></div></div>
+  ${tagStatsHTML(list, '이달의 실수 분류')}
+  <h3>이달의 배운점 · 다음 행동</h3><div class="card">${list.filter(x => x.lesson || x.next).slice().reverse().map(x => `<div style="margin-bottom:8px"><small class="hint">${fmtDate(x.date)}</small>${x.lesson ? `<div>💡 ${esc(x.lesson)}</div>` : ''}${x.next ? `<div>→ ${esc(x.next)}</div>` : ''}</div>`).join('') || '<small class="hint">이달 기록이 없어요.</small>'}</div>
+  <h3>이달의 회고 메모</h3><div class="card"><textarea id="rv-memo" placeholder="이번 달 가장 크게 배운 것, 다음 달에 바꿀 한 가지">${esc(rv)}</textarea><div class="btns"><button class="btn" id="rv-save">회고 저장</button></div></div>`;
+}
+async function loadReview(m) { try { const r = await dbGet('meta', 'review-' + m); state.revMemo = { m, v: r ? r.v : '' }; } catch (e) { state.revMemo = { m, v: '' }; } }
+
+/* 경험정리표 (STAR) */
+function llStarHTML() {
+  if (sform) {
+    const r = sform.rec;
+    return `<h2>경험정리표 ${sform.isNew ? '작성' : '수정'}</h2><div class="card">
+      <label>역량 분류 (내보낼 때 주제별로 묶여요)</label><select id="s-comp"><option value="">선택</option>${COMPS.map(c => `<option ${r.comp === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+      ${starTpl.map(f => `<label>${esc(f.l)}</label><textarea id="s-${f.k}" placeholder="${esc(f.h)}">${esc((r.v || {})[f.k])}</textarea>`).join('')}
+      ${r.from ? `<small class="hint">연결된 기록: ${fmtDate(r.from)}</small>` : ''}
+      <div class="btns"><button class="btn" id="s-save">저장</button><button class="btn ghost" id="s-cancel">취소</button>${sform.isNew ? '' : '<button class="btn danger" id="s-del">삭제</button>'}</div></div>`;
+  }
+  const waiting = cache.journals.filter(j => j.star && !cache.stars.some(s => s.jid === j.id));
+  return `<h2>경험정리표 <small class="hint">(${cache.stars.length}건)</small></h2>
+  <div class="btns" style="margin:0 0 12px"><button class="btn" id="s-add">＋ 새 경험 정리</button><button class="btn ghost" id="s-tpl">⚙ 양식 편집</button></div>
+  ${waiting.length ? `<div class="banner">⭐ 표시했지만 아직 정리하지 않은 기록이 ${waiting.length}건 있어요.<br>${waiting.slice(0, 5).map(j => `<button class="btn ghost sm" data-tostar="${j.id}" style="margin:6px 6px 0 0">${fmtDate(j.date)} ${esc((j.did || j.lesson || '').slice(0, 14))}</button>`).join('')}</div>` : ''}
+  ${cache.stars.map(s => `<div class="card item" data-sopen="${s.id}"><div class="t">${s.comp ? `<span class="tag ok">${esc(s.comp)}</span>` : ''}${esc(((s.v || {}).skill || '(제목 없음)').slice(0, 60))}</div><div class="m">${esc(((s.v || {}).r || (s.v || {}).s || '').slice(0, 90))}</div></div>`).join('') || '<div class="card"><small class="hint">아직 정리한 경험이 없어요. 일기에서 ⭐ 표시한 경험을 옮겨 오거나 새로 작성하세요.</small></div>'}
+  <h3>내보내기</h3><div class="card">
+    <button class="btn ghost block" id="x-star">📊 경험정리표 CSV (엑셀용)</button>
+    <button class="btn ghost block" id="x-story" style="margin-top:8px">📄 자소서 재료 텍스트 (역량별 묶음)</button>
+  </div>`;
+}
+function newStar(fromJ) {
+  const v = {};
+  if (fromJ) { v.skill = fromJ.resume || ''; v.s = `${fromJ.date} ${fromJ.did || ''}`.trim(); v.learn = fromJ.lesson || ''; if (fromJ.growth) v.r = fromJ.growth; if (fromJ.mistake) v.t = fromJ.mistake; }
+  sform = { isNew: true, rec: { id: uid(), comp: fromJ && fromJ.mistake ? '실수와 극복' : '', v, from: fromJ ? fromJ.date : '', jid: fromJ ? fromJ.id : '' } };
+  state.ll = 'star';
+}
+async function saveStar() {
+  const r = sform.rec; r.v = Object.assign({}, r.v);
+  starTpl.forEach(f => { const e = $('#s-' + f.k); if (e) r.v[f.k] = e.value.trim(); });
+  r.comp = $('#s-comp').value;
+  if (!Object.values(r.v).some(Boolean)) return toast('내용을 입력해 주세요');
+  r.updatedAt = Date.now(); r.createdAt = r.createdAt || r.updatedAt;
+  await dbPut('stars', r); await reload(); sform = null; toast('저장했어요 ✔'); render(); window.scrollTo(0, 0);
+}
+function llTplHTML() {
+  if (!tplDraft) tplDraft = starTpl.map(f => Object.assign({}, f));
+  return `<h2>경험정리표 양식 편집</h2><small class="hint">항목 이름과 설명을 바꾸거나, 추가·삭제·순서 변경을 할 수 있어요. 항목을 지워도 이미 쓴 내용은 지워지지 않고 숨겨져요.</small><div style="height:10px"></div>
+  ${tplDraft.map((f, i) => `<div class="card"><div class="row"><div style="flex:2"><label>항목 이름</label><input class="tp-l" type="text" value="${esc(f.l)}"></div></div><label>작성 안내</label><input class="tp-h" type="text" value="${esc(f.h)}">
+    <div class="btns"><button class="btn ghost sm" data-tu="${i}" ${i ? '' : 'disabled'}>▲ 위로</button><button class="btn ghost sm" data-td="${i}" ${i < tplDraft.length - 1 ? '' : 'disabled'}>▼ 아래로</button><button class="btn danger sm" data-tx="${i}">삭제</button></div></div>`).join('')}
+  <div class="btns"><button class="btn ghost" id="tp-add">＋ 항목 추가</button><button class="btn ghost" id="tp-reset">기본 양식으로</button></div>
+  <div class="btns"><button class="btn" id="tp-save">양식 저장</button><button class="btn ghost" id="tp-cancel">취소</button></div>`;
+}
+function collectTpl() { document.querySelectorAll('.tp-l').forEach((e, i) => { tplDraft[i].l = e.value; }); document.querySelectorAll('.tp-h').forEach((e, i) => { tplDraft[i].h = e.value; }); }
+
+/* 스펙이력 */
+const SPEC_F = [['start', '시작일', 'date'], ['end', '종료일 (진행 중이면 비움)', 'date'], ['item', '무엇을 (활동 항목)', 'text'], ['result', '그래서 결과는? (구체적 결과, 수치)', 'area'], ['effort', '노력 + 느낌 / 의미', 'area'], ['skill', '예시 역량', 'text']];
+function llSpecHTML() {
+  if (spform) {
+    const r = spform.rec;
+    return `<h2>스펙이력 ${spform.isNew ? '추가' : '수정'}</h2><div class="card">${SPEC_F.map(([k, l, t]) => `<label>${l}</label>` + (t === 'area' ? `<textarea id="sp-${k}">${esc(r[k])}</textarea>` : `<input id="sp-${k}" type="${t}" value="${esc(r[k])}">`)).join('')}
+    <div class="btns"><button class="btn" id="sp-save">저장</button><button class="btn ghost" id="sp-cancel">취소</button>${spform.isNew ? '' : '<button class="btn danger" id="sp-del">삭제</button>'}</div></div>`;
+  }
+  const list = cache.specs.slice().sort((a, b) => (b.start || '').localeCompare(a.start || ''));
+  return `<h2>스펙이력 <small class="hint">(${list.length}건)</small></h2><small class="hint">자격증, 교육, 프로젝트, 표창처럼 기간이 있는 활동을 정리해요.</small>
+  <div class="btns" style="margin:10px 0 12px"><button class="btn" id="sp-add">＋ 스펙 추가</button><button class="btn ghost" id="x-spec">📊 스펙이력 CSV</button></div>
+  ${list.map(s => `<div class="card item" data-spopen="${s.id}"><div class="t">${esc(s.item || '(활동 없음)')}</div><div class="m">${esc(s.start || '')}${s.start || s.end ? ' ~ ' : ''}${esc(s.end || (s.start ? '진행 중' : ''))}${s.skill ? ' · ' + esc(s.skill) : ''}</div>${s.result ? `<div class="m">${esc(s.result.slice(0, 90))}</div>` : ''}</div>`).join('') || '<div class="card"><small class="hint">아직 등록된 스펙이 없어요. 철도신호기사·전기기사·건설안전기사부터 넣어 보세요.</small></div>'}`;
+}
+async function saveSpec() {
+  const r = spform.rec; SPEC_F.forEach(([k]) => { r[k] = ($('#sp-' + k) || {}).value.trim(); });
+  if (!r.item) return toast('활동 항목을 입력해 주세요');
+  r.updatedAt = Date.now(); r.createdAt = r.createdAt || r.updatedAt;
+  await dbPut('specs', r); await reload(); spform = null; toast('저장했어요 ✔'); render();
+}
+
+function collectJournal() {
+  if (!jform || !$('#j-date')) return;
+  const g = id => { const e = $('#' + id); return e ? e.value.trim() : ''; };
+  const j = jform;
+  j.date = $('#j-date').value || j.date;
+  j.did = g('j-did'); j.lesson = g('j-lesson'); j.growth = g('j-growth'); j.mistake = g('j-mistake');
+  j.tag = ($('#j-tag') || {}).value || ''; j.next = g('j-next'); j.resume = g('j-resume');
+  j.star = !!($('#j-star') || {}).checked;
+}
+async function saveJournal() {
+  collectJournal();
+  const j = jform;
+  if (!j.did && !j.growth && !j.mistake && !j.lesson && !j.next && !j.resume) return toast('내용을 입력해 주세요');
+  try {
+    j.updatedAt = Date.now(); j.createdAt = j.createdAt || j.updatedAt;
+    await dbPut('journals', j); await reload();
+    toast(j.star ? '저장했어요 ⭐ 경험정리표 탭에서 정리할 수 있어요' : '저장했어요 ✔'); newJournal(); render(); window.scrollTo(0, 0);
+  } catch (e) { toast('저장 실패: ' + e.message); }
+}
+function bindJournal(on) {
+  document.querySelectorAll('[data-ll]').forEach(b => b.onclick = async () => {
+    collectJournal(); state.ll = b.dataset.ll; sform = null; spform = null; tplDraft = null;
+    if (state.ll === 'review') await loadReview(state.revM || ym(today()));
+    render(); window.scrollTo(0, 0);
+  });
+  on('j-save', saveJournal); on('j-new', () => { newJournal(); render(); window.scrollTo(0, 0); });
+  on('j-del', async () => { if (!confirm('이 기록을 삭제할까요?')) return; await dbDel('journals', jform.id); await reload(); newJournal(); render(); toast('삭제했어요'); });
+  on('j-tostar', () => { collectJournal(); newStar(jform); render(); window.scrollTo(0, 0); });
+  on('j-filter', e => { state.tagFilter = e.target.value; render(); }, 'change');
+  on('j-onlystar', e => { state.onlyStar = e.target.checked; render(); }, 'change');
+  on('j-q', e => { state.jq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#j-q'); q.focus(); q.setSelectionRange(pos, pos); }, 'input');
+  document.querySelectorAll('[data-jopen]').forEach(el => el.onclick = () => { jform = Object.assign({}, cache.journals.find(x => x.id === el.dataset.jopen)); state.ll = 'write'; render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { state.calM = shiftYM(state.calM || ym(today()), +b.dataset.cm); state.calD = ''; render(); });
+  document.querySelectorAll('[data-cd]').forEach(b => b.onclick = () => { state.calD = b.dataset.cd; render(); });
+  on('cal-write', () => { newJournal(); jform.date = state.calD; state.ll = 'write'; render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-rm2]').forEach(b => b.onclick = async () => { state.revM = shiftYM(state.revM || ym(today()), +b.dataset.rm2); await loadReview(state.revM); render(); });
+  on('rv-save', async () => { const m = state.revM || ym(today()), v = $('#rv-memo').value; await dbPut('meta', { k: 'review-' + m, v }); state.revMemo = { m, v }; toast('회고를 저장했어요 ✔'); });
+  on('s-add', () => { newStar(null); render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-tostar]').forEach(b => b.onclick = () => { newStar(cache.journals.find(x => x.id === b.dataset.tostar)); render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-sopen]').forEach(el => el.onclick = () => { const s = cache.stars.find(x => x.id === el.dataset.sopen); sform = { isNew: false, rec: JSON.parse(JSON.stringify(s)) }; render(); window.scrollTo(0, 0); });
+  on('s-save', saveStar); on('s-cancel', () => { sform = null; render(); });
+  on('s-del', async () => { if (!confirm('이 경험정리를 삭제할까요?')) return; await dbDel('stars', sform.rec.id); await reload(); sform = null; render(); toast('삭제했어요'); });
+  on('s-tpl', () => { state.ll = 'tpl'; tplDraft = null; render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-tu],[data-td]').forEach(b => b.onclick = () => { collectTpl(); const i = +(b.dataset.tu ?? b.dataset.td), j = b.dataset.tu != null ? i - 1 : i + 1; [tplDraft[i], tplDraft[j]] = [tplDraft[j], tplDraft[i]]; render(); });
+  document.querySelectorAll('[data-tx]').forEach(b => b.onclick = () => { collectTpl(); if (tplDraft.length <= 1) return toast('항목이 하나는 있어야 해요'); tplDraft.splice(+b.dataset.tx, 1); render(); });
+  on('tp-add', () => { collectTpl(); tplDraft.push({ k: 'f' + uid(), l: '새 항목', h: '' }); render(); });
+  on('tp-reset', () => { tplDraft = DEF_STAR.map(f => Object.assign({}, f)); render(); });
+  on('tp-cancel', () => { tplDraft = null; state.ll = 'star'; render(); });
+  on('tp-save', async () => { collectTpl(); if (tplDraft.some(f => !f.l.trim())) return toast('항목 이름을 비울 수 없어요'); starTpl = tplDraft.map(f => ({ k: f.k, l: f.l.trim(), h: f.h.trim() })); await dbPut('meta', { k: 'starTpl', v: starTpl }); tplDraft = null; state.ll = 'star'; toast('양식을 저장했어요 ✔'); render(); });
+  on('sp-add', () => { spform = { isNew: true, rec: { id: uid() } }; render(); window.scrollTo(0, 0); });
+  document.querySelectorAll('[data-spopen]').forEach(el => el.onclick = () => { spform = { isNew: false, rec: Object.assign({}, cache.specs.find(x => x.id === el.dataset.spopen)) }; render(); window.scrollTo(0, 0); });
+  on('sp-save', saveSpec); on('sp-cancel', () => { spform = null; render(); });
+  on('sp-del', async () => { if (!confirm('이 스펙을 삭제할까요?')) return; await dbDel('specs', spform.rec.id); await reload(); spform = null; render(); toast('삭제했어요'); });
+  on('x-star', exportStarCSV); on('x-story', exportStory); on('x-spec', exportSpecCSV);
+}
+
+/* ---------- 백업 · 내보내기 ---------- */
+function dl(name, blob) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const blobToDataURL = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+const csvCell = v => '"' + String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' / ') + '"';
+const csvBlob = rows => new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+const WORK_KEYS = ['logs', 'trades', 'drawings', 'manuals', 'hbs'], PERSONAL_KEYS = ['journals', 'stars', 'specs'];
+async function exportJSON(kind = 'all') {
+  toast('백업 파일 만드는 중…');
+  const data = { app: 'site-log', version: 3, kind, exportedAt: new Date().toISOString() };
+  if (kind !== 'personal') {
+    WORK_KEYS.forEach(k => data[k] = cache[k]);
+    data.photos = [];
+    for (const p of await dbAll('photos')) data.photos.push({ id: p.id, logId: p.logId, caption: p.caption, kind: p.kind, data: await blobToDataURL(p.blob) });
+    data.annots = await dbAll('annots');
+    if (($('#d-incf') || {}).checked) { data.files = []; for (const f of await dbAll('files')) data.files.push({ id: f.id, name: f.name, type: f.type, size: f.size, data: await blobToDataURL(f.blob) }); }
+  }
+  if (kind !== 'work') {
+    PERSONAL_KEYS.forEach(k => data[k] = cache[k]);
+    data.meta = (await dbAll('meta')).filter(m => m.k === 'starTpl' || m.k.startsWith('review-'));
+  }
+  const label = { all: '전체', work: '업무', personal: '개인' }[kind];
+  dl(`현장기록장_${label}백업_${today()}.json`, new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  const now = Date.now();
+  if (kind !== 'personal') { lastBackup = now; await dbPut('meta', { k: 'lastBackup', v: now }); }
+  if (kind !== 'work') await dbPut('meta', { k: 'lastPersonalBackup', v: now });
+  render();
+}
+async function importJSON(file) {
+  try {
+    const d = JSON.parse(await file.text());
+    if (d.app !== 'site-log') throw new Error('이 앱의 백업 파일이 아니에요');
+    for (const k of [...WORK_KEYS, ...PERSONAL_KEYS]) for (const v of d[k] || []) { if (k === 'hbs') v.indexed = false; await dbPut(k, v); }
+    for (const p of d.photos || []) await dbPut('photos', { id: p.id, logId: p.logId, caption: p.caption, kind: p.kind, blob: await (await fetch(p.data)).blob() });
+    for (const a of d.annots || []) await dbPut('annots', a);
+    for (const f of d.files || []) await dbPut('files', { id: f.id, name: f.name, type: f.type, size: f.size, blob: await (await fetch(f.data)).blob() });
+    for (const m of d.meta || []) { await dbPut('meta', m); if (m.k === 'starTpl') starTpl = m.v; }
+    await reload(); toast('복원했어요 ✔'); render();
+  } catch (e) { toast('복원 실패: ' + e.message); }
+}
+function exportLogCSV() {
+  const rows = [['날짜', '날씨', '투입인원', '구간', '상세ID', '공종', '단위', '반입', '설치', '작업내용', '도면비교', '도면메모', '특이사항', '사진수']];
+  for (const l of cache.logs.slice().reverse()) {
+    const base = [l.date, l.weather, l.crew, l.section];
+    const tail = [l.progress, l.drawing === 'ok' ? '일치' : l.drawing === 'diff' ? '차이있음' : '', l.drawingNote, l.special, (l.photoIds || []).length + (l.archived || 0)];
+    if ((l.results || []).length) l.results.forEach(r => { const t = cache.trades.find(x => x.id === r.tradeId) || {}; rows.push([...base, t.code || '', tradeName(r.tradeId), t.unit || '', r.inQty, r.setQty, ...tail]); });
+    else rows.push([...base, '', l.trade || '', '', '', '', ...tail]);
+  }
+  dl(`작업일보_${today()}.csv`, csvBlob(rows));
+}
+function exportProgCSV() {
+  const rows = [['상세ID', '공종', '단위', '계약수량', '전체가중치(%)', '반입누계', '설치누계', '반입률', '설치률', '실행공종률', '계획공종률', '최근실적일']];
+  calcProgress().forEach(r => rows.push([r.t.code || '', r.t.name, r.t.unit, r.t.qty, r.t.wAll, r.cin, r.cset, pct(r.rin), pct(r.rset), pct(r.rate), r.t.plan === '' ? '' : pct(r.plan), r.last]));
+  dl(`공정률_${today()}.csv`, csvBlob(rows));
+}
+function exportJournalCSV() {
+  const rows = [['일자', '진행업무', '배운점', '잘한점', '아쉬운점', '실수분류', '다음에는', '자소서에 기록할 점', '⭐']];
+  cache.journals.slice().reverse().forEach(j => rows.push([j.date, j.did, j.lesson, j.growth, j.mistake, j.tag, j.next, j.resume, j.star ? '★' : '']));
+  dl(`LessonsLearned_${today()}.csv`, csvBlob(rows));
+}
+function exportStarCSV() {
+  const rows = [['순번', '역량 분류', ...starTpl.map(f => f.l), '연결 기록일']];
+  cache.stars.forEach((s, i) => rows.push([i + 1, s.comp || '', ...starTpl.map(f => (s.v || {})[f.k] || ''), s.from || '']));
+  dl(`경험정리표_${today()}.csv`, csvBlob(rows));
+}
+function exportSpecCSV() {
+  const rows = [['순번', '기간', '무엇을(활동항목)', '그래서 결과는?(구체적 결과, 수치)', '노력+느낌/의미', '예시 역량']];
+  cache.specs.slice().sort((a, b) => (a.start || '').localeCompare(b.start || '')).forEach((s, i) => rows.push([i + 1, `${(s.start || '').replace(/-/g, '.')}~${(s.end || '').replace(/-/g, '.')}`, s.item, s.result, s.effort, s.skill]));
+  dl(`스펙이력_${today()}.csv`, csvBlob(rows));
+}
+function exportStory() {
+  const out = [];
+  const groups = {}; cache.stars.forEach(s => (groups[s.comp || '분류 안 함'] = groups[s.comp || '분류 안 함'] || []).push(s));
+  for (const c of [...COMPS, '분류 안 함']) {
+    if (!groups[c]) continue;
+    out.push(`■ ${c}\n`);
+    groups[c].forEach(s => { out.push(starTpl.map(f => (s.v || {})[f.k] ? `${f.l}\n  ${(s.v || {})[f.k].replace(/\n/g, '\n  ')}` : '').filter(Boolean).join('\n') + '\n'); });
+  }
+  const loose = cache.journals.filter(j => j.star && !cache.stars.some(s => s.jid === j.id)).slice().reverse();
+  if (loose.length) { out.push('■ 아직 정리하지 않은 ⭐ 기록\n'); loose.forEach(j => out.push([`[${j.date}]`, j.did && `· 진행업무: ${j.did}`, j.resume && `· 자소서 메모: ${j.resume}`, j.lesson && `· 배운점: ${j.lesson}`].filter(Boolean).join('\n') + '\n')); }
+  dl(`자소서재료_${today()}.txt`, new Blob([out.join('\n') || '아직 정리한 경험이 없어요.'], { type: 'text/plain;charset=utf-8' }));
+}
+async function photoArchiveInfo(months) {
+  const cut = shiftYM(ym(today()), -months) + '-01';
+  const olds = cache.logs.filter(l => l.date < cut && (l.photoIds || []).length);
+  return { cut, logs: olds, count: olds.reduce((a, l) => a + l.photoIds.length, 0) };
+}
+async function archivePhotos() {
+  const months = +($('#pa-m') || {}).value || 6, info = await photoArchiveInfo(months);
+  if (!info.count) return toast('정리할 사진이 없어요');
+  if (!lastBackup || Date.now() - lastBackup > 864e5) return toast('먼저 업무 백업(또는 전체 백업)을 해 주세요. 오늘 백업한 뒤에만 정리할 수 있어요');
+  if (!confirm(`${fmtDate(info.cut)} 이전 일보의 사진 ${info.count}장을 이 기기에서 지울까요?\n일보 글은 그대로 남고, 사진은 백업 파일에만 남아요. 되돌릴 수 없어요.`)) return;
+  for (const l of info.logs) { for (const p of l.photoIds) await dbDel('photos', p); l.archived = (l.archived || 0) + l.photoIds.length; l.photoIds = []; await dbPut('logs', l); }
+  await reload(); toast(`사진 ${info.count}장을 정리했어요`); render();
+}
+function dataHTML() {
+  const days = lastBackup ? Math.floor((Date.now() - lastBackup) / 864e5) : null;
+  setTimeout(async () => {
+    const el = $('#st-use'); if (!el) return;
+    try { const e = await navigator.storage.estimate(); el.textContent = `이 앱이 쓰는 용량: 약 ${(e.usage / 1048576).toFixed(1)}MB`; } catch (er) { el.textContent = ''; }
+    const pi = $('#pa-info'); if (pi) { const info = await photoArchiveInfo(+($('#pa-m') || {}).value || 6); pi.textContent = `${fmtDate(info.cut)} 이전 사진 ${info.count}장`; }
+  }, 0);
+  return `<h2>백업</h2>
+  <div class="card">
+    <p style="margin-top:0">현재 <b>일보 ${cache.logs.length}건</b>, <b>공종 ${cache.trades.length}개</b>, <b>Lessons ${cache.journals.length}건</b>, <b>경험정리 ${cache.stars.length}건</b>이 이 기기에 있어요.<br><small class="hint">마지막 업무 백업: ${lastBackup ? new Date(lastBackup).toLocaleDateString('ko-KR') + ` (${days}일 전)` : '아직 없음'}</small><br><small class="hint" id="st-use"></small></p>
+    <button class="btn block" id="d-json">💾 전체 백업 (사진 포함)</button>
+    <div class="btns"><button class="btn ghost" id="d-json-w">🏗 업무만 백업</button><button class="btn ghost" id="d-json-p">📓 개인 기록만 백업</button></div>
+    <label class="chk"><input id="d-incf" type="checkbox"> 도면 원본 파일도 백업에 넣기 (파일이 커져요)</label>
+    <small class="hint">업무 백업에는 일보·사진·공종·도면 정보·마킹이, 개인 백업에는 Lessons·경험정리표·스펙이력이 들어가요. 백업 파일은 구글 드라이브에 올려 보관하세요 (업무 사진이 포함된 파일은 회사 규정을 먼저 확인).</small>
+    <label class="btn ghost block" style="margin-top:12px">📥 백업 파일에서 복원<input id="d-import" type="file" accept=".json,application/json" style="display:none"></label>
+  </div>
+  <h3>오래된 사진 정리 (용량 확보)</h3>
+  <div class="card">
+    <div class="row" style="align-items:flex-end"><div><label>기준</label><select id="pa-m"><option value="3">3개월 지난 사진</option><option value="6" selected>6개월 지난 사진</option><option value="12">12개월 지난 사진</option></select></div><div><small class="hint" id="pa-info"></small></div></div>
+    <button class="btn danger block" id="pa-go" style="margin-top:10px">🗑 오래된 사진 기기에서 지우기</button>
+    <small class="hint">오늘 업무 백업을 한 뒤에만 실행돼요. 일보 글과 실적은 그대로 남아요.</small>
+  </div>
+  <h3>엑셀로 내보내기</h3>
+  <div class="card">
+    <button class="btn ghost block" id="d-csv1">📊 작업일보 CSV</button>
+    <button class="btn ghost block" id="d-csv3" style="margin-top:8px">📈 공정률 CSV (기성관리용)</button>
+    <button class="btn ghost block" id="d-csv2" style="margin-top:8px">📓 Lessons Learned CSV</button>
+  </div>
+  <small class="hint">모든 데이터는 이 기기 안에만 저장되고, 내보내기 버튼을 누를 때만 파일로 나가요.</small>`;
+}
+
+/* ---------- 홈 · 공정률(도넛) · 임시저장 · 공종 CSV ---------- */
+const TITLES = { home: '홈', log: '작업일보', prog: '공정률', ref: '공종마스터', draw: '도면', man: '편람', journal: 'Lessons Learned', data: '설정 · 백업' };
+function donut(rate, size = 140, sub = '') {
+  const r = 42, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, rate || 0));
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="${(p * 100).toFixed(1)}%" style="flex:none"><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--line)" stroke-width="12"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--pri)" stroke-width="12" stroke-dasharray="${(c * p).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 50 50)"/><text x="50" y="${sub ? 47 : 50}" text-anchor="middle" dominant-baseline="central" font-size="${size > 100 ? 17 : 15}" font-weight="800" fill="currentColor">${(p * 100).toFixed(1)}%</text>${sub ? `<text x="50" y="64" text-anchor="middle" font-size="7" fill="var(--sub)">${sub}</text>` : ''}</svg>`;
+}
+function homeHTML() {
+  const t = today(), rows = calcProgress(t), o = overall(rows);
+  const todayLogs = cache.logs.filter(l => l.date === t).length;
+  const days = lastBackup ? Math.floor((Date.now() - lastBackup) / 864e5) : null;
+  const lj = cache.journals[0], lesson = lj ? (lj.lesson || lj.next || lj.growth || lj.did || '') : '';
+  const tile = (go, ic, name) => `<button class="tile" data-go="${go}"><span>${ic}</span>${name}</button>`;
+  return `<div class="tiles">${tile('log', '📝', '작업일보')}${tile('draw', '📐', '도면')}${tile('man', '📘', '편람')}${tile('prog', '📊', '공정률')}${tile('journal', '📓', 'Lessons Learned')}${tile('data', '⚙️', '설정 · 백업')}</div>
+  <div class="sumrow">
+    <div class="card"><div class="kv" style="margin:0">오늘 일보</div><div style="font-size:20px;font-weight:800">${todayLogs ? '✔ ' + todayLogs + '건 작성' : '⚠ 아직 안 썼어요'}</div></div>
+    <div class="card dn">${rows.length ? donut(o.act, 84) : ''}<div><div class="kv" style="margin:0">전체 공정률</div><div style="font-size:20px;font-weight:800">${rows.length ? pct(o.act) : '공종 등록 전'}</div></div></div>
+    <div class="card"><div class="kv" style="margin:0">편람 개정 확인</div>${(() => { const d = hbDays(), nw = cache.hbs.filter(h => h.newer).length; return `<div style="font-size:20px;font-weight:800;${!cache.hbs.length || d === null || d >= 7 || nw ? 'color:var(--warn)' : ''}">${!cache.hbs.length ? '편람 미등록' : d === null ? '아직 안 함' : d + '일 전'}</div>${nw ? `<small class="hint">새 개정 ${nw}건 있음</small>` : ''}`; })()}</div>
+    <div class="card"><div class="kv" style="margin:0">마지막 백업</div><div style="font-size:20px;font-weight:800;${days === null || days > 7 ? 'color:var(--warn)' : ''}">${days === null ? '아직 없음' : days + '일 전'}</div></div>
+  </div>
+  ${lesson ? `<div class="card" style="margin-top:12px"><div class="kv" style="margin:0">최근 Lessons</div><div>💡 ${esc(lesson.slice(0, 90))}</div></div>` : ''}`;
+}
+function soonHTML() {
+  const m = state.tab === 'draw' ? ['📐 도면', '3단계', '도면 PDF·이미지 등록, 확대·이동, 펜·형광펜·메모 마킹, 개정 관리'] : ['📘 편람', '4단계', '철도신호편람 PDF 저장·검색, 개정사항 정리, 주 1회 개정 확인 알림'];
+  return `<h2>${m[0]}</h2><div class="card"><p style="margin-top:0">이 화면은 ${m[1]}에서 만들어요.</p><small class="hint">${m[2]}</small></div>`;
+}
+function progHTML() {
+  const cut = state.cut || today(), rows = calcProgress(cut);
+  const head = `<div class="card"><div class="row"><div><label>기준일 (이 날짜까지의 실적)</label><input id="p-cut" type="date" value="${esc(cut)}"></div><div style="display:flex;align-items:flex-end"><button class="btn ghost block" data-go="ref">⚙ 공종마스터 관리</button></div></div></div>`;
+  if (!rows.length) return head + `<div class="card"><p style="margin-top:0">아직 등록된 공종이 없어요.</p><small class="hint">공종마스터에 계약수량과 가중치를 넣고(CSV로 한 번에 불러올 수도 있어요), 일보에서 반입·설치 수량을 입력하면 공정률이 계산돼요.</small></div>`;
+  const o = overall(rows), diff = o.act - o.plan;
+  return head + `<div class="card dn" style="justify-content:center;flex-wrap:wrap">${donut(o.act, 180, '전체 공정률')}<div><div class="kv" style="margin:0">계획 ${pct(o.plan)}</div><div class="${diff >= 0 ? 'pos' : 'neg'}" style="font-size:24px;font-weight:800">${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff * 100).toFixed(1)}%p</div><small class="hint">${fmtDate(cut)} 기준${Math.abs(o.w - 100) > 0.01 ? `<br>가중치 합계 ${fmtN(o.w)}% → 비율로 환산` : ''}</small></div></div>
+  <div class="dgrid">${rows.map(r => { const d = r.rate - r.plan, hasPlan = r.t.plan !== '' && r.t.plan != null; return `<div class="card dn">${donut(r.rate, 104)}<div style="min-width:0"><div style="font-weight:700">${esc(r.t.name)}</div><div class="kv" style="display:block;margin-top:2px">반입 ${fmtN(r.cin)} / ${fmtN(r.t.qty)} ${esc(r.t.unit || '')} (${pct(r.rin)})<br>설치 ${fmtN(r.cset)} (${pct(r.rset)})${hasPlan ? `<br>계획 ${pct(r.plan)} <span class="${d >= 0 ? 'pos' : 'neg'}">${d >= 0 ? '+' : ''}${(d * 100).toFixed(1)}%p</span>` : ''}<br>${r.last ? '최근 ' + fmtDate(r.last) : '실적 없음'}</div></div></div>`; }).join('')}</div>
+  <div style="height:10px"></div><small class="hint">실행공종률 = (반입률×반입가중치 + 설치률×설치가중치) ÷ (반입가중치+설치가중치). 전체 공정률 = 공종별 실행률의 전체가중치 가중평균이에요.</small>`;
+}
+function tradesHTML() {
+  state.mtab = 'trades';
+  const bar = `<h2>공종마스터</h2><div class="btns" style="margin:0 0 12px"><label class="btn ghost">📥 CSV 불러오기<input id="t-csv" type="file" accept=".csv,text/csv,text/plain" style="display:none"></label><button class="btn ghost" id="t-tpl">📄 CSV 양식 받기</button></div>`;
+  return refHTML().replace(/<div class="seg"[^>]*>[\s\S]*?<\/div>/, mform ? '' : bar);
+}
+const TRADE_MAP = { code: ['상세ID', 'ID', '코드'], name: ['공종명', '세부공종명', '공종'], unit: ['단위'], qty: ['계약수량', '수량'], wAll: ['전체가중치', '가중치'], wIn: ['반입가중치'], wSet: ['설치가중치'], prevIn: ['기존반입누계', '반입누계'], prevSet: ['기존설치누계', '설치누계'], plan: ['계획공종률', '계획'] };
+const normH = s => String(s || '').replace(/\s|\(%\)|%/g, '');
+function parseCSV(t) {
+  t = t.replace(/^﻿/, '');
+  const first = t.split('\n')[0], d = (first.includes('\t') && !first.includes(',')) ? '\t' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (q) { if (c === '"') { if (t[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === d) { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (c !== '\r') cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ''));
+}
+async function importTradesCSV(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('euc-kr').decode(buf); }
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('데이터가 없어요');
+    const heads = rows[0].map(normH), idx = {};
+    for (const k in TRADE_MAP) idx[k] = heads.findIndex(h => TRADE_MAP[k].map(normH).includes(h));
+    if (idx.name < 0) throw new Error("'공종명' 열을 찾지 못했어요");
+    let add = 0, upd = 0;
+    for (const r of rows.slice(1)) {
+      const name = (r[idx.name] || '').trim(); if (!name) continue;
+      const code = idx.code >= 0 ? (r[idx.code] || '').trim() : '';
+      const ex = cache.trades.find(t => code ? t.code === code : (!t.code && t.name === name));
+      const rec = ex ? Object.assign({}, ex) : { id: uid(), createdAt: Date.now() + add };
+      for (const k of Object.keys(TRADE_MAP)) {
+        if (k === 'name' || idx[k] < 0) continue;
+        const v = (r[idx[k]] || '').trim().replace(/[,%]/g, '');
+        rec[k] = (k === 'unit' || k === 'code') ? (r[idx[k]] || '').trim() : (v === '' || isNaN(Number(v)) ? '' : Number(v));
+      }
+      rec.name = name; rec.updatedAt = Date.now();
+      await dbPut('trades', rec); ex ? upd++ : add++;
+    }
+    await reload(); toast(`공종 ${add}개 추가, ${upd}개 수정`); render();
+  } catch (e) { toast('불러오기 실패: ' + e.message); }
+}
+function tradesTemplate() {
+  dl('공종마스터_양식.csv', csvBlob([['상세ID', '공종명', '단위', '계약수량', '전체가중치(%)', '반입가중치(%)', '설치가중치(%)', '기존반입누계', '기존설치누계', '계획공종률(%)'], ['예) 전기신호_1', '예) 신호케이블', 'm', 1000, 60, 40, 60, 0, 0, 50]]));
+}
+let draftT = null;
+async function saveDraft() {
+  if (!db || !form || !form.isNew) return;
+  const l = form.log;
+  const empty = !l.progress && !l.special && !l.drawingNote && !l.crew && !l.section && !(l.results || []).some(r => r.tradeId || r.inQty || r.setQty) && !form.photos.length;
+  try {
+    if (empty) await dbDel('meta', 'draft');
+    else await dbPut('meta', { k: 'draft', log: l, photos: form.photos.map(p => ({ id: p.id, blob: p.blob, caption: p.caption, kind: p.kind })) });
+  } catch (e) { /* 임시저장 실패는 무시 */ }
+}
+$('#app').addEventListener('input', () => {
+  if (state.tab === 'log' && state.sub === 'input' && form && form.isNew) { clearTimeout(draftT); draftT = setTimeout(() => { collectLog(); saveDraft(); }, 800); }
+});
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+/* ---------- 도면 (보기 · 마킹 · 개정) ---------- */
+let pdfLib = null;
+async function getPdfLib() {
+  if (pdfLib) return pdfLib;
+  if (location.protocol === 'file:') throw new Error('PDF는 설치(홈 화면 추가)한 앱에서 열 수 있어요');
+  pdfLib = await import('./pdfjs/pdf.min.mjs');
+  pdfLib.GlobalWorkerOptions.workerSrc = new URL('./pdfjs/pdf.worker.min.mjs', location.href).href;
+  return pdfLib;
+}
+async function pdfOpen(blob) {
+  const lib = await getPdfLib(), base = new URL('./pdfjs/', location.href).href;
+  const task = lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()), cMapUrl: base + 'cmaps/', cMapPacked: true, standardFontDataUrl: base + 'standard_fonts/', wasmUrl: base + 'wasm/', isEvalSupported: false, enableScripting: false });
+  const doc = await task.promise; doc._task = task; return doc;
+}
+function pdfClose(d) { try { (typeof d.destroy === 'function' ? d.destroy() : d._task.destroy()); } catch (e) { } }
+async function filePages(blob) {
+  if (blob.type === 'application/pdf' || /\.pdf$/i.test(blob.name || '')) { const d = await pdfOpen(blob); const n = d.numPages; pdfClose(d); return n; }
+  return 1;
+}
+const isPdf = f => f && (f.type === 'application/pdf' || /\.pdf$/i.test(f.name || ''));
+
+let dform = null, dv = null;
+const DCOLORS = ['#e53935', '#1e88e5', '#2e7d32', '#111111'];
+const DTOOLS = [['hand', '✋', '이동'], ['pen', '✏️', '펜'], ['hl', '🖍', '형광펜'], ['line', '／', '직선'], ['rect', '▭', '사각'], ['ellipse', '◯', '원'], ['text', 'T', '글자'], ['eraser', '🧽', '지우개']];
+
+function drawCur(d) { return (d.versions || []).find(v => v.vid === d.cur) || (d.versions || [])[(d.versions || []).length - 1]; }
+function drawHTML() {
+  if (dform) return drawFormHTML();
+  const q = (state.dq || '').toLowerCase();
+  const list = cache.drawings.filter(d => !q || [d.no, d.name, d.trade, d.section, d.note].join(' ').toLowerCase().includes(q));
+  return `<h2>도면 <small class="hint">(${cache.drawings.length}건)</small></h2>
+  <div class="btns" style="margin:0 0 12px"><button class="btn" id="dw-add">＋ 도면 등록 (PDF · 사진)</button></div>
+  <input id="dw-q" type="search" placeholder="도면번호, 도면명, 공종, 구간 검색" value="${esc(state.dq || '')}" style="margin-bottom:12px">
+  ${list.map(d => { const c = drawCur(d); return `<div class="card"><div class="item" data-dopen="${d.id}"><div class="t">${d.no ? '[' + esc(d.no) + '] ' : ''}${esc(d.name || '(도면명 없음)')}</div>
+    <div class="m">${c ? `${c.rev ? 'Rev.' + esc(c.rev) + ' · ' : ''}${c.pages || 1}쪽 · ${esc(c.date || '')}` : '파일 없음'}${(d.versions || []).length > 1 ? ` · 개정 ${(d.versions.length)}판` : ''}</div>
+    <div style="margin-top:6px">${d.trade ? `<span class="tag">${esc(d.trade)}</span>` : ''}${d.section ? `<span class="tag">${esc(d.section)}</span>` : ''}</div></div>
+    <div class="btns" style="margin-top:8px"><button class="btn sm" data-dopen="${d.id}">📐 열기</button><button class="btn ghost sm" data-dedit="${d.id}">정보 · 개정</button></div></div>`; }).join('') || '<div class="card"><small class="hint">아직 등록된 도면이 없어요. 파일 앱(또는 사진)에서 도면 PDF를 불러오세요. 여러 파일을 한 번에 고를 수 있어요.</small></div>'}
+  <small class="hint">도면 파일은 이 기기 안에만 저장돼요. 마킹은 원본과 따로 저장되어 원본은 바뀌지 않아요.</small>`;
+}
+function drawFormHTML() {
+  const d = dform.rec, isNew = dform.isNew, vs = d.versions || [];
+  const f = (k, l, ph = '') => `<label>${l}</label><input id="df-${k}" type="text" placeholder="${ph}" value="${esc(d[k])}">`;
+  return `<h2>${isNew ? '도면 등록' : '도면 정보 · 개정'}</h2><div class="card">
+    ${isNew ? `<label>도면 파일 (PDF, JPG, PNG — 여러 개 선택 가능)</label><input id="df-file" type="file" accept="application/pdf,.pdf,image/*" multiple><small class="hint">여러 개를 고르면 파일 이름을 도면명으로 해서 한꺼번에 등록돼요.</small>` : ''}
+    ${f('no', '도면번호', '예: SG-T-101')}${f('name', '도면명', '비우면 파일 이름 사용')}
+    <div class="row"><div>${f('trade', '공종', '예: 전기신호')}</div><div>${f('section', '구간 / STA', '예: 1+250~1+500')}</div></div>
+    ${isNew ? `<div class="row"><div><label>개정 (Rev)</label><input id="df-rev" type="text" placeholder="예: 0"></div><div><label>개정일</label><input id="df-date" type="date" value="${today()}"></div></div>` : ''}
+    <label>메모</label><textarea id="df-note">${esc(d.note)}</textarea>
+    <div class="btns"><button class="btn" id="df-save">저장</button><button class="btn ghost" id="df-cancel">취소</button>${isNew ? '' : '<button class="btn danger" id="df-del">도면 삭제</button>'}</div></div>
+  ${isNew ? '' : `<h3>개정 이력</h3><div class="card">${vs.slice().reverse().map(v => `<div class="kv" style="margin:0 0 8px;color:var(--tx)"><span>${v.vid === d.cur ? '✅ ' : ''}${v.rev ? 'Rev.' + esc(v.rev) : '(Rev 없음)'} · ${esc(v.date || '')} · ${v.pages || 1}쪽${v.note ? ' · ' + esc(v.note) : ''}</span><span>${v.vid === d.cur ? '현재판' : `<button class="btn ghost sm" data-dcur="${v.vid}">현재판으로</button>`}</span></div>`).join('') || '<small class="hint">파일이 없어요.</small>'}
+    <h3 style="margin-top:14px">새 개정판 추가</h3>
+    <div class="row"><div><label>개정 (Rev)</label><input id="dr-rev" type="text"></div><div><label>개정일</label><input id="dr-date" type="date" value="${today()}"></div></div>
+    <label>개정 내용</label><input id="dr-note" type="text" placeholder="예: 신호기 위치 변경">
+    <label class="btn ghost block" style="margin-top:10px">📄 개정 파일 선택해서 추가<input id="dr-file" type="file" accept="application/pdf,.pdf,image/*" style="display:none"></label>
+    <small class="hint">이전 판과 그 마킹은 그대로 남아요. 도면을 열면 판을 골라 볼 수 있어요.</small></div>`}`;
+}
+async function addFileVersion(d, file, rev, date, note) {
+  const fid = uid(), pages = await filePages(file);
+  await dbPut('files', { id: fid, blob: file, name: file.name, type: file.type || (isPdf(file) ? 'application/pdf' : 'image/jpeg'), size: file.size });
+  const v = { vid: uid(), fileId: fid, rev: rev || '', date: date || today(), note: note || '', pages, fname: file.name, addedAt: Date.now() };
+  d.versions = (d.versions || []).concat(v); d.cur = v.vid;
+  return v;
+}
+async function saveDrawForm() {
+  const d = dform.rec, g = k => (($('#df-' + k) || {}).value || '').trim();
+  ['no', 'name', 'trade', 'section', 'note'].forEach(k => d[k] = g(k));
+  try {
+    if (dform.isNew) {
+      const files = [...($('#df-file').files || [])];
+      if (!files.length) return toast('도면 파일을 골라 주세요');
+      toast('도면을 저장하는 중…');
+      for (const [i, file] of files.entries()) {
+        const rec = files.length === 1 ? d : Object.assign({}, d, { id: uid(), no: '' });
+        if (!rec.name || files.length > 1) rec.name = rec.name && files.length === 1 ? rec.name : file.name.replace(/\.[^.]+$/, '');
+        await addFileVersion(rec, file, g('rev'), g('date'), '');
+        rec.updatedAt = Date.now(); rec.createdAt = rec.createdAt || Date.now() + i;
+        await dbPut('drawings', rec);
+      }
+      toast(`도면 ${files.length}건을 등록했어요 ✔`);
+    } else { d.updatedAt = Date.now(); await dbPut('drawings', d); toast('저장했어요 ✔'); }
+    await reload(); dform = null; render();
+  } catch (e) { toast('저장 실패: ' + e.message); }
+}
+async function deleteDrawing(d) {
+  if (!confirm('이 도면과 모든 개정판, 마킹을 삭제할까요? 되돌릴 수 없어요.')) return;
+  const fids = (d.versions || []).map(v => v.fileId);
+  for (const f of fids) await dbDel('files', f);
+  for (const a of await dbAll('annots')) if (fids.includes(a.fileId)) await dbDel('annots', a.k);
+  await dbDel('drawings', d.id); await reload(); dform = null; render(); toast('삭제했어요');
+}
+
+/* 뷰어 */
+async function openViewer(id, vid, startPage) {
+  const d = typeof id === 'object' ? id : cache.drawings.find(x => x.id === id); if (!d) return;
+  const v = (d.versions || []).find(x => x.vid === (vid || d.cur)) || drawCur(d);
+  closeViewer();
+  dv = { d, v, page: 1, pages: v ? v.pages || 1 : 1, z: 1, tx: 0, ty: 0, tool: 'pen', color: DCOLORS[0], w: 3, show: true, pencilOnly: true, shapes: [], undo: [], redo: [], ptrs: new Map(), cur: null };
+  const el = document.createElement('div'); el.id = 'viewer'; el.className = 'vw'; document.body.appendChild(el);
+  document.body.style.overflow = 'hidden';
+  vChrome();
+  if (!v) return vMsg('이 도면에는 파일이 없어요.');
+  const f = await dbGet('files', v.fileId);
+  if (!f) return vMsg('원본 파일이 이 기기에 없어요 (백업에서 복원한 경우). 같은 파일을 다시 불러오면 마킹이 그대로 연결돼요.', true);
+  try {
+    if (isPdf(f)) { dv.doc = await pdfOpen(f.blob); dv.pages = dv.doc.numPages; }
+    else { dv.img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = URL.createObjectURL(f.blob); }); dv.pages = 1; }
+    await vGoPage(Math.max(1, Math.min(startPage || 1, dv.pages)));
+  } catch (e) { if (dv) vMsg('도면을 열지 못했어요: ' + e.message); }
+}
+function closeViewer() {
+  const el = $('#viewer'); if (el) el.remove();
+  document.body.style.overflow = '';
+  if (dv) { if (dv.task) try { dv.task.cancel(); } catch (e) { } if (dv.doc) pdfClose(dv.doc); if (dv.img) URL.revokeObjectURL(dv.img.src); }
+  dv = null;
+}
+function vMsg(t, relink) {
+  if (!dv || !$('#vstage')) return;
+  $('#vstage').innerHTML = `<div class="card" style="margin:20px">${esc(t)}${relink ? '<label class="btn block" style="margin-top:12px">📄 원본 파일 다시 불러오기<input id="v-relink" type="file" accept="application/pdf,.pdf,image/*" style="display:none"></label>' : ''}</div>`;
+  const r = $('#v-relink'); if (r) r.onchange = async e => { const file = e.target.files[0]; if (!file) return; await dbPut('files', { id: dv.v.fileId, blob: file, name: file.name, type: file.type || 'application/pdf', size: file.size }); const id = dv.d.id, vid = dv.v.vid; toast('다시 연결했어요 ✔'); openViewer(id, vid); };
+}
+function vChrome() {
+  const d = dv.d, vs = d.versions || [];
+  $('#viewer').innerHTML = `<div class="vbar"><button id="v-close" class="vb">✕</button><b class="vt">${d.no ? esc(d.no) + ' ' : ''}${esc(d.name || '')}</b>
+    ${vs.length > 1 ? `<select id="v-ver" class="vsel">${vs.map(v => `<option value="${v.vid}" ${dv.v && v.vid === dv.v.vid ? 'selected' : ''}>${v.rev ? 'Rev.' + esc(v.rev) : esc(v.date)}${v.vid === d.cur ? ' (현재)' : ''}</option>`).join('')}</select>` : ''}
+    <button id="v-prev" class="vb">◀</button><span id="v-pg" class="vpg">-</span><button id="v-next" class="vb">▶</button></div>
+  <div class="vstage" id="vstage"><div id="vwrap"><canvas id="vpdf"></canvas><canvas id="vann"></canvas></div></div>
+  <div class="vtools">${DTOOLS.map(([k, ic, l]) => `<button class="vb ${dv.tool === k ? 'on' : ''}" data-vt="${k}" title="${l}">${ic}<small>${l}</small></button>`).join('')}
+    <span class="vsep"></span>${DCOLORS.map(c => `<button class="vb vc ${dv.color === c ? 'on' : ''}" data-vc="${c}" style="--c:${c}" title="색"></button>`).join('')}
+    <select id="v-w" class="vsel" title="굵기">${[[2, '가늘게'], [3, '보통'], [6, '굵게']].map(([n, l]) => `<option value="${n}" ${dv.w === n ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <span class="vsep"></span><button class="vb" id="v-undo" title="실행취소">↶<small>취소</small></button><button class="vb" id="v-redo" title="다시실행">↷<small>다시</small></button>
+    <button class="vb ${dv.show ? '' : 'on'}" id="v-hide">👁<small>${dv.show ? '숨기기' : '보이기'}</small></button>
+    <button class="vb ${dv.pencilOnly ? 'on' : ''}" id="v-pencil" title="펜슬로만 그리고 손가락은 이동">✍<small>펜슬전용</small></button>
+    <button class="vb" id="v-toc">📑<small>목차</small></button>${d.kind === 'hb' ? '<button class="vb" id="v-bm">🔖<small>북마크</small></button>' : ''}
+    <button class="vb" id="v-fit">⤢<small>맞춤</small></button><button class="vb" id="v-clear">🗑<small>페이지지움</small></button><button class="vb" id="v-export">⬇<small>이미지</small></button></div>`;
+  const on = (id, fn, ev = 'click') => { const e = $('#' + id); if (e) e.addEventListener(ev, fn); };
+  on('v-close', closeViewer);
+  on('v-ver', e => openViewer(dv.d.id, e.target.value), 'change');
+  on('v-prev', () => dv.page > 1 && vGoPage(dv.page - 1)); on('v-next', () => dv.page < dv.pages && vGoPage(dv.page + 1));
+  document.querySelectorAll('[data-vt]').forEach(b => b.onclick = () => { dv.tool = b.dataset.vt; vToolsSync(); });
+  document.querySelectorAll('[data-vc]').forEach(b => b.onclick = () => { dv.color = b.dataset.vc; if (dv.tool === 'hand' || dv.tool === 'eraser') dv.tool = 'pen'; vToolsSync(); });
+  on('v-w', e => { dv.w = +e.target.value; }, 'change');
+  on('v-undo', () => { if (!dv.undo.length) return; dv.redo.push(JSON.stringify(dv.shapes)); dv.shapes = JSON.parse(dv.undo.pop()); vAnnDraw(); vSaveAnn(); });
+  on('v-redo', () => { if (!dv.redo.length) return; dv.undo.push(JSON.stringify(dv.shapes)); dv.shapes = JSON.parse(dv.redo.pop()); vAnnDraw(); vSaveAnn(); });
+  on('v-hide', () => { dv.show = !dv.show; vAnnDraw(); vChromeKeep(); });
+  on('v-pencil', () => { dv.pencilOnly = !dv.pencilOnly; vChromeKeep(); toast(dv.pencilOnly ? '펜슬로만 그려요. 손가락은 이동·확대' : '손가락으로도 그릴 수 있어요'); });
+  on('v-fit', () => { dv.z = 1; dv.tx = 0; dv.ty = 0; vFitCenter(); vApply(); vRender(); });
+  on('v-clear', () => { if (!dv.shapes.length || !confirm('이 페이지의 마킹을 모두 지울까요?')) return; vPush(); dv.shapes = []; vAnnDraw(); vSaveAnn(); });
+  on('v-export', vExport); on('v-toc', vTocPanel); on('v-bm', hbAddBookmark);
+  vBindGestures();
+}
+function vChromeKeep() { const keep = { z: dv.z, tx: dv.tx, ty: dv.ty }; const pdfC = $('#vpdf'); vChrome(); $('#vwrap').replaceChild(pdfC, $('#vpdf')); Object.assign(dv, keep); vSize(); vApply(); vAnnDraw(); vPageLabel(); }
+function vToolsSync() { document.querySelectorAll('[data-vt]').forEach(b => b.classList.toggle('on', b.dataset.vt === dv.tool)); document.querySelectorAll('[data-vc]').forEach(b => b.classList.toggle('on', b.dataset.vc === dv.color)); }
+function vPageLabel() { const p = $('#v-pg'); if (p) p.textContent = `${dv.page} / ${dv.pages}`; }
+async function vGoPage(n) {
+  if (!dv) return;
+  dv.page = n; vPageLabel();
+  if (dv.doc) { if (dv.pageObj) dv.pageObj.cleanup(); dv.pageObj = await dv.doc.getPage(n); if (!dv) return; const vp = dv.pageObj.getViewport({ scale: 1 }); dv.pw = vp.width; dv.ph = vp.height; }
+  else { dv.pw = dv.img.naturalWidth; dv.ph = dv.img.naturalHeight; }
+  const a = await dbGet('annots', dv.v.fileId + ':' + n); if (!dv) return; dv.shapes = a ? a.shapes : []; dv.undo = []; dv.redo = [];
+  dv.z = 1; dv.tx = 0; dv.ty = 0; vFitCenter(); vApply(); await vRender();
+}
+function vFitCenter() {
+  const st = $('#vstage'), W = st.clientWidth, H = st.clientHeight;
+  const k = Math.min(W / dv.pw, H / dv.ph); dv.bw = dv.pw * k; dv.bh = dv.ph * k;
+  dv.tx = (W - dv.bw * dv.z) / 2; dv.ty = Math.max(0, (H - dv.bh * dv.z) / 2); vSize();
+}
+function vSize() { ['vpdf', 'vann'].forEach(id => { const c = $('#' + id); c.style.width = dv.bw + 'px'; c.style.height = dv.bh + 'px'; }); }
+function vApply() { $('#vwrap').style.transform = `translate(${dv.tx}px,${dv.ty}px) scale(${dv.z})`; }
+const V_MAXPIX = 8e6, V_MAXSIDE = 4096;
+function vResK() { const dpr = window.devicePixelRatio || 1; return Math.min(dv.z * dpr, V_MAXSIDE / dv.bw, V_MAXSIDE / dv.bh, Math.sqrt(V_MAXPIX / (dv.bw * dv.bh))); }
+async function vRender() {
+  if (!dv) return;
+  const k = vResK(), W = Math.round(dv.bw * k), H = Math.round(dv.bh * k);
+  const off = document.createElement('canvas'); off.width = W; off.height = H; const ctx = off.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  try {
+    if (dv.doc) {
+      if (dv.task) try { dv.task.cancel(); } catch (e) { }
+      dv.task = dv.pageObj.render({ canvasContext: ctx, viewport: dv.pageObj.getViewport({ scale: W / dv.pw }) });
+      await dv.task.promise; dv.task = null;
+    } else ctx.drawImage(dv.img, 0, 0, W, H);
+  } catch (e) { if (e && e.name === 'RenderingCancelledException') return; throw e; }
+  if (!dv) return;
+  const c = $('#vpdf'); c.width = W; c.height = H; c.getContext('2d').drawImage(off, 0, 0); off.width = off.height = 0;
+  vAnnDraw();
+}
+function vAnnDraw(extra) {
+  const c = $('#vann'); if (!c || !dv) return;
+  const k = vResK(), W = Math.round(dv.bw * k), H = Math.round(dv.bh * k);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  const ctx = c.getContext('2d'); ctx.clearRect(0, 0, W, H);
+  if (!dv.show) return;
+  for (const s of dv.shapes) drawShape(ctx, s, W, H);
+  if (extra) drawShape(ctx, extra, W, H);
+}
+function drawShape(ctx, s, W, H) {
+  ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = ctx.fillStyle = s.c;
+  ctx.lineWidth = s.w * W / 1000 * (s.t === 'hl' ? 4 : 1); ctx.globalAlpha = s.t === 'hl' ? 0.35 : 1;
+  const P = s.pts.map(([x, y]) => [x * W, y * H]);
+  ctx.beginPath();
+  if (s.t === 'pen' || s.t === 'hl') { P.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); if (P.length === 1) ctx.lineTo(P[0][0] + 0.1, P[0][1]); ctx.stroke(); }
+  else if (s.t === 'line') { ctx.moveTo(...P[0]); ctx.lineTo(...P[1]); ctx.stroke(); }
+  else if (s.t === 'rect') { ctx.strokeRect(Math.min(P[0][0], P[1][0]), Math.min(P[0][1], P[1][1]), Math.abs(P[1][0] - P[0][0]), Math.abs(P[1][1] - P[0][1])); }
+  else if (s.t === 'ellipse') { ctx.ellipse((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2, Math.abs(P[1][0] - P[0][0]) / 2 || 0.1, Math.abs(P[1][1] - P[0][1]) / 2 || 0.1, 0, 0, Math.PI * 2); ctx.stroke(); }
+  else if (s.t === 'text') {
+    const fs = s.size * W / 1000; ctx.font = `bold ${fs}px -apple-system,"Apple SD Gothic Neo",sans-serif`; ctx.textBaseline = 'top';
+    String(s.s).split('\n').forEach((ln, i) => { ctx.globalAlpha = 0.85; ctx.fillStyle = '#fff'; const m = ctx.measureText(ln); ctx.fillRect(P[0][0] - 2, P[0][1] + i * fs * 1.25 - 2, m.width + 4, fs * 1.2 + 2); ctx.globalAlpha = 1; ctx.fillStyle = s.c; ctx.fillText(ln, P[0][0], P[0][1] + i * fs * 1.25); });
+  }
+  ctx.restore();
+}
+function shapeSamples(s) {
+  if (s.t === 'pen' || s.t === 'hl') return s.pts;
+  const [a, b] = s.pts, out = [];
+  if (s.t === 'text') return [a];
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24;
+    if (s.t === 'line') out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+    else if (s.t === 'ellipse') { const g = t * Math.PI * 2; out.push([(a[0] + b[0]) / 2 + Math.cos(g) * (b[0] - a[0]) / 2, (a[1] + b[1]) / 2 + Math.sin(g) * (b[1] - a[1]) / 2]); }
+    else { const p = t * 4, e = Math.floor(p) % 4, f = p - Math.floor(p), C = [[a[0], a[1]], [b[0], a[1]], [b[0], b[1]], [a[0], b[1]]], u = C[e], w = C[(e + 1) % 4]; out.push([u[0] + (w[0] - u[0]) * f, u[1] + (w[1] - u[1]) * f]); }
+  }
+  return out;
+}
+function vPt(e) { const r = $('#vstage').getBoundingClientRect(); return [((e.clientX - r.left - dv.tx) / dv.z) / dv.bw, ((e.clientY - r.top - dv.ty) / dv.z) / dv.bh]; }
+function vPush() { dv.undo.push(JSON.stringify(dv.shapes)); if (dv.undo.length > 60) dv.undo.shift(); dv.redo = []; }
+let annT = null;
+function vSaveAnn() { const key = dv.v.fileId + ':' + dv.page, shapes = dv.shapes.slice(), fid = dv.v.fileId, page = dv.page; clearTimeout(annT); annT = setTimeout(() => { (shapes.length ? dbPut('annots', { k: key, fileId: fid, page, shapes, updatedAt: Date.now() }) : dbDel('annots', key)).catch(() => toast('마킹 저장 실패')); }, 250); }
+function vErase(pt) {
+  const r = 0.015 * (1 / Math.sqrt(dv.z)), before = dv.shapes.length;
+  const keep = dv.shapes.filter(s => !shapeSamples(s).some(([x, y]) => Math.hypot((x - pt[0]) * dv.bw / dv.bh, y - pt[1]) < r * dv.bw / dv.bh + 0.002 || Math.hypot(x - pt[0], (y - pt[1]) * dv.bh / dv.bw) < r));
+  if (keep.length !== before) { if (!dv.erased) { vPush(); dv.erased = true; } dv.shapes = keep; vAnnDraw(); }
+}
+function vBindGestures() {
+  const st = $('#vstage'); let pinch = null, rT = null;
+  const settle = () => { clearTimeout(rT); rT = setTimeout(vRender, 250); };
+  const drawing = e => dv.tool !== 'hand' && !(dv.pencilOnly && e.pointerType === 'touch');
+  st.addEventListener('pointerdown', e => {
+    if (!dv || !dv.bw) return;
+    st.setPointerCapture(e.pointerId); dv.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.pointerType });
+    const touches = [...dv.ptrs.values()].filter(p => p.t === 'touch');
+    if (touches.length >= 2) { dv.cur = null; vAnnDraw(); const [a, b] = touches; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, z: dv.z, tx: dv.tx, ty: dv.ty }; return; }
+    if (!drawing(e)) { dv.pan = { x: e.clientX, y: e.clientY, tx: dv.tx, ty: dv.ty, id: e.pointerId }; return; }
+    const p = vPt(e);
+    if (dv.tool === 'eraser') { dv.erased = false; dv.cur = { t: 'eraser', id: e.pointerId }; vErase(p); return; }
+    if (dv.tool === 'text') {
+      const s = prompt('도면에 적을 글자'); dv.ptrs.delete(e.pointerId);
+      if (s && s.trim()) { vPush(); dv.shapes.push({ t: 'text', c: dv.color, w: dv.w, size: 14 + dv.w * 3, s: s.trim(), pts: [p] }); vAnnDraw(); vSaveAnn(); }
+      return;
+    }
+    dv.cur = { t: dv.tool, c: dv.color, w: dv.w, pts: dv.tool === 'pen' || dv.tool === 'hl' ? [p] : [p, p], id: e.pointerId };
+    vAnnDraw(dv.cur);
+  });
+  st.addEventListener('pointermove', e => {
+    if (!dv || !dv.ptrs.has(e.pointerId)) return;
+    dv.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.pointerType });
+    if (pinch) {
+      const touches = [...dv.ptrs.values()].filter(p => p.t === 'touch'); if (touches.length < 2) return;
+      const [a, b] = touches, d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, r = st.getBoundingClientRect();
+      const z = Math.max(0.5, Math.min(8, pinch.z * d / pinch.d)), cx = pinch.mx - r.left, cy = pinch.my - r.top;
+      dv.z = z; dv.tx = cx - (cx - pinch.tx) * z / pinch.z + (mx - pinch.mx); dv.ty = cy - (cy - pinch.ty) * z / pinch.z + (my - pinch.my); vApply(); return;
+    }
+    if (dv.pan && dv.pan.id === e.pointerId) { dv.tx = dv.pan.tx + e.clientX - dv.pan.x; dv.ty = dv.pan.ty + e.clientY - dv.pan.y; vApply(); return; }
+    if (!dv.cur || dv.cur.id !== e.pointerId) return;
+    const p = vPt(e);
+    if (dv.cur.t === 'eraser') return vErase(p);
+    if (dv.cur.t === 'pen' || dv.cur.t === 'hl') { const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; evs.forEach(ev => dv.cur.pts.push(vPt(ev))); } else dv.cur.pts[1] = p;
+    vAnnDraw(dv.cur);
+  });
+  const up = e => {
+    if (!dv) return;
+    dv.ptrs.delete(e.pointerId);
+    if (pinch) { if ([...dv.ptrs.values()].filter(p => p.t === 'touch').length < 2) { pinch = null; settle(); } return; }
+    if (dv.pan && dv.pan.id === e.pointerId) { dv.pan = null; return; }
+    if (dv.cur && dv.cur.id === e.pointerId) {
+      const s = dv.cur; dv.cur = null;
+      if (s.t === 'eraser') { if (dv.erased) vSaveAnn(); return; }
+      delete s.id; s.pts = s.pts.map(([x, y]) => [Math.round(x * 1e4) / 1e4, Math.round(y * 1e4) / 1e4]);
+      vPush(); dv.shapes.push(s); vAnnDraw(); vSaveAnn();
+    }
+  };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+  st.addEventListener('wheel', e => { if (!dv) return; e.preventDefault(); const r = st.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top, z = Math.max(0.5, Math.min(8, dv.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); dv.tx = cx - (cx - dv.tx) * z / dv.z; dv.ty = cy - (cy - dv.ty) * z / dv.z; dv.z = z; vApply(); settle(); }, { passive: false });
+}
+function vExport() {
+  const a = $('#vpdf'), b = $('#vann'), c = document.createElement('canvas'); c.width = a.width; c.height = a.height;
+  const ctx = c.getContext('2d'); ctx.drawImage(a, 0, 0); if (dv.show) ctx.drawImage(b, 0, 0);
+  c.toBlob(bl => { dl(`${(dv.d.no || dv.d.name || '도면').replace(/[\\/:*?"<>|]/g, '_')}_${dv.page}쪽_마킹.png`, bl); c.width = c.height = 0; }, 'image/png');
+}
+function bindDraw(on) {
+  on('dw-add', () => { dform = { isNew: true, rec: { id: uid() } }; render(); window.scrollTo(0, 0); });
+  on('dw-q', e => { state.dq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#dw-q'); q.focus(); q.setSelectionRange(pos, pos); }, 'input');
+  document.querySelectorAll('[data-dopen]').forEach(b => b.onclick = () => openViewer(b.dataset.dopen));
+  document.querySelectorAll('[data-dedit]').forEach(b => b.onclick = () => { dform = { isNew: false, rec: JSON.parse(JSON.stringify(cache.drawings.find(x => x.id === b.dataset.dedit))) }; render(); window.scrollTo(0, 0); });
+  on('df-save', saveDrawForm); on('df-cancel', () => { dform = null; render(); });
+  on('df-del', () => deleteDrawing(dform.rec));
+  document.querySelectorAll('[data-dcur]').forEach(b => b.onclick = async () => { const d = dform.rec; d.cur = b.dataset.dcur; await dbPut('drawings', d); await reload(); render(); toast('현재판을 바꿨어요'); });
+  on('dr-file', async e => {
+    const file = e.target.files[0]; if (!file) return;
+    const d = dform.rec; ['no', 'name', 'trade', 'section', 'note'].forEach(k => d[k] = (($('#df-' + k) || {}).value || '').trim());
+    try { toast('개정판을 저장하는 중…'); await addFileVersion(d, file, $('#dr-rev').value.trim(), $('#dr-date').value, $('#dr-note').value.trim()); d.updatedAt = Date.now(); await dbPut('drawings', d); await reload(); dform.rec = JSON.parse(JSON.stringify(cache.drawings.find(x => x.id === d.id))); render(); toast('개정판을 추가했어요 ✔'); }
+    catch (er) { toast('추가 실패: ' + er.message); }
+  }, 'change');
+}
+window.addEventListener('resize', () => { if (dv && dv.bw) { const z = dv.z; dv.z = 1; vFitCenter(); dv.z = z; vApply(); vRender(); } });
+
+/* ---------- 편람 (저장 · 검색 · 개정 관리) ---------- */
+const HB_SITE = 'https://www.kric.go.kr/jsp/board/portal/sub02/bui/railBuildList.jsp?q_type=KR003&q_bulid=1009';
+const HB_RE = /(KR\s*[A-Z]\s*-\s*\d{5})\s*([^()\n]*?)\s*\((\d{6})\s*,\s*rev\.?\s*(\d+)\s*\)/ig;
+const normNo = s => s.replace(/[\s_]/g, '').toUpperCase().replace(/^KR([A-Z])/, 'KR $1');
+const yymmdd = s => `20${s.slice(0, 2)}-${s.slice(2, 4)}-${s.slice(4, 6)}`;
+function parseHbName(name) {
+  const t = name.replace(/\.pdf$/i, '').replace(/_/g, ' ');
+  HB_RE.lastIndex = 0; const m = HB_RE.exec(t);
+  if (!m) return { no: '', title: t.replace(/\s*\(\d+\)\s*$/, '').trim(), date: '', rev: '' };
+  return { no: normNo(m[1]), title: m[2].trim(), date: yymmdd(m[3]), rev: m[4] };
+}
+let hbform = null, hbBusy = '';
+const hbSort = (a, b) => (a.no || '~').localeCompare(b.no || '~') || (a.title || '').localeCompare(b.title || '');
+function hbDays() { return hbChecked ? Math.floor((Date.now() - hbChecked) / 864e5) : null; }
+
+function hbHTML() {
+  if (hbform) return hbDetailHTML();
+  const sub = state.hbs || 'list';
+  const seg = `<div class="seg" style="margin-bottom:12px">${[['list', '📘 편람'], ['search', '🔍 본문 검색'], ['check', '🔄 개정 확인']].map(([k, l]) => `<button data-hbs="${k}" class="${sub === k ? 'on pri' : ''}">${l}</button>`).join('')}</div>`;
+  const d = hbDays(), warn = cache.hbs.length && (d === null || d >= 7) ? `<div class="banner">🔄 편람 개정 확인을 ${d === null ? '아직 한 번도 안 했어요' : d + '일 동안 안 했어요'}. 인터넷 되는 곳에서 「개정 확인」을 눌러 주세요.</div>` : '';
+  return warn + seg + (sub === 'search' ? hbSearchHTML() : sub === 'check' ? hbCheckHTML() : hbListHTML()) + (hbBusy ? `<div class="banner" style="margin-top:12px">⏳ ${esc(hbBusy)}</div>` : '');
+}
+function hbListHTML() {
+  const q = (state.hbq || '').toLowerCase();
+  const list = cache.hbs.filter(h => (!state.hbFav || h.fav) && (!q || [h.no, h.title].join(' ').toLowerCase().includes(q))).sort(hbSort);
+  return `<label class="btn block" style="margin-bottom:10px">📥 편람 PDF 불러오기 (여러 개 선택 가능)<input id="hb-file" type="file" accept="application/pdf,.pdf" multiple style="display:none"></label>
+  <small class="hint">파일 이름의 「KR S-06010 연동장치 일반사항(250630, Rev.9)」에서 문서번호·개정일·Rev를 자동으로 읽어요. 같은 문서번호의 새 Rev를 불러오면 개정판으로 교체되고 이력이 남아요.</small>
+  <div class="row" style="margin:10px 0"><input id="hb-q" type="search" placeholder="문서번호, 제목 검색" value="${esc(state.hbq || '')}"><label class="chk" style="margin:0;flex:none"><input id="hb-fav" type="checkbox" ${state.hbFav ? 'checked' : ''}> ⭐만</label></div>
+  ${list.map(h => `<div class="card"><div class="item" data-hbopen="${h.id}"><div class="t">${h.fav ? '⭐ ' : ''}${esc(h.no)} ${esc(h.title)}</div>
+    <div class="m">Rev.${esc(h.rev || '-')} · ${esc(h.date || '')} · ${h.pages || '?'}쪽${h.newer ? ` · <b style="color:var(--bad)">새 개정 Rev.${esc(h.newer.rev)} (${esc(h.newer.date)}) 있음</b>` : ''}${h.indexed ? '' : ' · 검색 준비 안 됨'}</div></div>
+    <div class="btns" style="margin-top:8px"><button class="btn sm" data-hbopen="${h.id}">📖 열기</button><button class="btn ghost sm" data-hbinfo="${h.id}">개정사항 · 정보</button></div></div>`).join('') || `<div class="card"><small class="hint">${cache.hbs.length ? '해당하는 편람이 없어요.' : '아직 저장된 편람이 없어요. 아이패드 파일 앱(OneDrive 등)에 있는 편람 PDF를 모두 골라 한 번에 불러오세요.'}</small></div>`}
+  <small class="hint">저장된 편람 ${cache.hbs.length}개${cache.hbs.some(h => !h.indexed) ? ` · <button class="btn ghost sm" id="hb-reindex">검색 준비 다시 하기</button>` : ''}</small>`;
+}
+async function hbImport(files) {
+  const added = [], updated = [], failed = [];
+  for (const [i, file] of [...files].entries()) {
+    hbBusy = `편람 저장 중 (${i + 1}/${files.length}) ${file.name}`; render();
+    try {
+      const info = parseHbName(file.name), ex = info.no ? cache.hbs.find(h => h.no === info.no) : null;
+      if (ex && ex.rev && info.rev && +info.rev < +ex.rev) { failed.push(`${file.name} (이미 더 최신 Rev.${ex.rev}가 있어요)`); continue; }
+      if (ex && ex.rev === info.rev && ex.date === info.date) { failed.push(`${file.name} (같은 판이 이미 있어요)`); continue; }
+      const fid = uid();
+      await dbPut('files', { id: fid, blob: file, name: file.name, type: 'application/pdf', size: file.size });
+      const doc = await pdfOpen(file); let revPage = 0, tocPage = 0;
+      for (let p = 1; p <= doc.numPages; p++) {
+        if (p % 5 === 1) { hbBusy = `검색 준비 중 (${i + 1}/${files.length}) ${info.no || file.name} ${p}/${doc.numPages}쪽`; render(); }
+        const pg = await doc.getPage(p), tc = await pg.getTextContent(); pg.cleanup();
+        const t = tc.items.map(x => x.str).join(' ').replace(/\s+/g, ' ').trim();
+        if (!revPage && /개정\s*사유/.test(t)) revPage = p;
+        if (!tocPage && /목\s*차/.test(t.slice(0, 40))) tocPage = p;
+        await dbPut('hbtext', { k: fid + ':' + p, fileId: fid, page: p, t });
+      }
+      const pages = doc.numPages; pdfClose(doc);
+      if (ex) {
+        ex.history = (ex.history || []).concat({ rev: ex.rev, date: ex.date, replacedAt: today() });
+        await dbDel('files', ex.fileId); for (const x of await dbAll('hbtext')) if (x.fileId === ex.fileId) await dbDel('hbtext', x.k);
+        Object.assign(ex, { title: info.title || ex.title, rev: info.rev, date: info.date, fileId: fid, fname: file.name, pages, revPage, tocPage, indexed: true, updatedAt: Date.now() });
+        if (ex.newer && +ex.newer.rev <= +info.rev) delete ex.newer;
+        await dbPut('hbs', ex); updated.push(`${ex.no} Rev.${info.rev}`);
+      } else {
+        await dbPut('hbs', { id: uid(), no: info.no, title: info.title, rev: info.rev, date: info.date, fileId: fid, fname: file.name, pages, revPage, tocPage, indexed: true, fav: false, bookmarks: [], changes: [], history: [], createdAt: Date.now() + i });
+        added.push(info.no || file.name);
+      }
+    } catch (e) { failed.push(`${file.name} (${e.message})`); }
+  }
+  hbBusy = ''; await reload(); render();
+  alert([added.length && `새로 저장: ${added.length}개`, updated.length && `개정판으로 교체: ${updated.join(', ')}`, failed.length && `건너뜀:\n${failed.join('\n')}`].filter(Boolean).join('\n\n') || '변경 없음');
+}
+async function hbReindex() {
+  for (const [i, h] of cache.hbs.filter(x => !x.indexed).entries()) {
+    const f = await dbGet('files', h.fileId); if (!f) continue;
+    const doc = await pdfOpen(f.blob);
+    for (let p = 1; p <= doc.numPages; p++) { if (p % 5 === 1) { hbBusy = `검색 준비 중 ${h.no} ${p}/${doc.numPages}쪽`; render(); } const pg = await doc.getPage(p), tc = await pg.getTextContent(); pg.cleanup(); await dbPut('hbtext', { k: h.fileId + ':' + p, fileId: h.fileId, page: p, t: tc.items.map(x => x.str).join(' ').replace(/\s+/g, ' ').trim() }); }
+    pdfClose(doc); h.indexed = true; await dbPut('hbs', h);
+  }
+  hbBusy = ''; await reload(); render(); toast('검색 준비 완료');
+}
+function hbSearchHTML() {
+  const r = state.hbRes;
+  return `<div class="card"><div class="row"><input id="hbs-q" type="search" placeholder="예: 궤조절연, 신호기 건식한계, 쇄정" value="${esc(state.hbsq || '')}"><button class="btn" id="hbs-go" style="flex:none">검색</button></div><small class="hint">띄어쓰기는 무시하고 찾아요. 저장된 편람 ${cache.hbs.length}개 전체에서 찾아요.</small></div>
+  ${r ? `<h3>"${esc(r.q)}" 검색 결과 ${r.items.length}건${r.items.length >= 200 ? ' (200건까지 표시)' : ''}</h3>` + r.items.map(it => `<div class="card item" data-hbgo="${it.hid}:${it.page}"><div class="t">${esc(it.no)} ${esc(it.title)} · ${it.page}쪽</div><div class="m">…${it.snip}…</div></div>`).join('') : ''}`;
+}
+async function hbSearch() {
+  const q = ($('#hbs-q') || {}).value.trim(); state.hbsq = q; if (!q) return;
+  const nq = q.replace(/\s+/g, '').toLowerCase(), items = [], byFile = {};
+  cache.hbs.forEach(h => byFile[h.fileId] = h);
+  for (const x of await dbAll('hbtext')) {
+    const h = byFile[x.fileId]; if (!h) continue;
+    const t = x.t, map = [], flat = [];
+    for (let i = 0; i < t.length; i++) if (!/\s/.test(t[i])) { flat.push(t[i].toLowerCase()); map.push(i); }
+    const at = flat.join('').indexOf(nq); if (at < 0) continue;
+    const s = map[at], e = map[at + nq.length - 1] + 1;
+    items.push({ hid: h.id, no: h.no, title: h.title, page: x.page, snip: esc(t.slice(Math.max(0, s - 40), s)) + '<mark>' + esc(t.slice(s, e)) + '</mark>' + esc(t.slice(e, e + 60)) });
+    if (items.length >= 200) break;
+  }
+  items.sort((a, b) => a.no.localeCompare(b.no) || a.page - b.page);
+  state.hbRes = { q, items }; render();
+}
+function hbCheckHTML() {
+  const d = hbDays(), r = state.hbChk;
+  return `<div class="card"><p style="margin-top:0">마지막 개정 확인: <b>${hbChecked ? new Date(hbChecked).toLocaleDateString('ko-KR') + ` (${d}일 전)` : '아직 없음'}</b></p>
+    <b>① 인터넷 되는 곳에서 목록 열기</b><div class="btns"><a class="btn ghost" href="${HB_SITE}" target="_blank" rel="noopener">🌐 철도건설기준(신호) 목록 열기</a><button class="btn ghost" id="hbc-auto">⚡ 자동으로 확인해 보기</button></div>
+    <small class="hint">자동 확인은 사이트 보안 설정 때문에 안 될 수 있어요. 안 되면 ②로 해 주세요.</small>
+    <div style="height:14px"></div><b>② 목록 화면 글자를 전부 복사해서 붙여넣기</b>
+    <small class="hint" style="display:block">목록 페이지에서 길게 눌러 「전체 선택 → 복사」 한 뒤 아래에 붙여넣으세요. 1페이지(최신순)만 붙여넣어도 돼요.</small>
+    <textarea id="hbc-text" placeholder="여기에 붙여넣기" style="margin-top:8px"></textarea>
+    <div class="btns"><button class="btn" id="hbc-cmp">🔍 저장된 편람과 비교</button><button class="btn ghost" id="hbc-done">✔ 확인 완료로 기록</button></div></div>
+  ${r ? hbCmpHTML(r) : ''}`;
+}
+function hbCompare(text) {
+  const found = {}; let m; HB_RE.lastIndex = 0;
+  while ((m = HB_RE.exec(text))) { const no = normNo(m[1]), it = { no, title: m[2].trim(), date: yymmdd(m[3]), rev: m[4] }; if (!found[no] || +it.rev > +found[no].rev) found[no] = it; }
+  const newer = [], missing = [], same = [];
+  for (const it of Object.values(found)) {
+    const h = cache.hbs.find(x => x.no === it.no);
+    if (!h) missing.push(it); else if (+it.rev > +(h.rev || 0)) newer.push({ it, h }); else same.push(it);
+  }
+  return { total: Object.keys(found).length, newer, missing, same };
+}
+function hbCmpHTML(r) {
+  if (!r.total) return `<div class="card"><small class="hint">붙여넣은 글에서 「KR S-00000 제목 (YYMMDD, Rev.N)」 형식을 찾지 못했어요. 목록 페이지 전체를 복사했는지 확인해 주세요.</small></div>`;
+  return `<h3>비교 결과 (목록에서 ${r.total}개 문서 인식)</h3>
+  <div class="card"><b style="color:var(--bad)">🆕 새 개정이 나온 편람 ${r.newer.length}개</b>${r.newer.map(({ it, h }) => `<div class="kv" style="color:var(--tx)"><span>${esc(it.no)} ${esc(it.title)}</span><span>보유 Rev.${esc(h.rev)} → <b>Rev.${esc(it.rev)}</b> (${esc(it.date)})</span></div>`).join('') || '<div class="kv">없음 👍</div>'}
+  ${r.newer.length ? '<small class="hint">사이트에서 새 PDF를 내려받아 「📘 편람 → 편람 PDF 불러오기」로 넣으면 자동으로 교체되고 이력이 남아요.</small>' : ''}</div>
+  <div class="card"><b>📄 아직 저장 안 된 문서 ${r.missing.length}개</b>${r.missing.map(it => `<div class="kv" style="color:var(--tx)"><span>${esc(it.no)} ${esc(it.title)}</span><span>Rev.${esc(it.rev)} (${esc(it.date)})</span></div>`).join('') || '<div class="kv">없음</div>'}</div>
+  <div class="card"><b>✔ 최신판 보유 ${r.same.length}개</b></div>`;
+}
+async function hbMarkChecked(res) {
+  hbChecked = Date.now(); await dbPut('meta', { k: 'hbChecked', v: hbChecked });
+  if (res) for (const { it, h } of res.newer) { h.newer = { rev: it.rev, date: it.date }; await dbPut('hbs', h); }
+  await reload();
+}
+async function hbAuto() {
+  try {
+    toast('사이트에 연결 중…');
+    const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 12000);
+    const res = await fetch(HB_SITE, { signal: ctl.signal }); clearTimeout(tm);
+    const html = await res.text(), text = new DOMParser().parseFromString(html, 'text/html').body.innerText || html.replace(/<[^>]+>/g, ' ');
+    state.hbChk = hbCompare(text); if (!state.hbChk.total) throw new Error('목록을 읽지 못했어요');
+    await hbMarkChecked(state.hbChk); render(); toast('자동 확인 완료 ✔');
+  } catch (e) { toast('자동 확인이 안 돼요 (' + (e.name === 'AbortError' ? '시간 초과' : '사이트 보안 제한') + '). ①로 열어서 ②로 붙여넣어 주세요'); }
+}
+function hbDetailHTML() {
+  const h = hbform.rec, ch = h.changes || [];
+  return `<h2>${esc(h.no)} ${esc(h.title)}</h2>
+  <div class="card"><div class="kv" style="margin:0;color:var(--tx)"><span>현재 보유: <b>Rev.${esc(h.rev || '-')}</b> · ${esc(h.date || '')} · ${h.pages}쪽</span><label class="chk" style="margin:0"><input id="hbd-fav" type="checkbox" ${h.fav ? 'checked' : ''}> ⭐ 즐겨찾기</label></div>
+    ${h.newer ? `<div class="banner" style="margin:10px 0 0">🆕 사이트에 Rev.${esc(h.newer.rev)} (${esc(h.newer.date)})이 있어요. 새 PDF를 받아 불러오세요.</div>` : ''}
+    <div class="btns"><button class="btn" data-hbgo="${h.id}:1">📖 열기</button>${h.revPage ? `<button class="btn ghost" data-hbgo="${h.id}:${h.revPage}">📜 PDF 개정이력표 (${h.revPage}쪽)</button>` : ''}${h.tocPage ? `<button class="btn ghost" data-hbgo="${h.id}:${h.tocPage}">📑 목차 (${h.tocPage}쪽)</button>` : ''}</div>
+    ${(h.bookmarks || []).length ? `<h3>🔖 북마크</h3>${h.bookmarks.map((b, i) => `<div class="kv" style="color:var(--tx)"><button class="btn ghost sm" data-hbgo="${h.id}:${b.page}">${b.page}쪽</button><span style="flex:1;margin-left:8px">${esc(b.label)}</span><button class="btn danger sm" data-hbbm="${i}">✕</button></div>`).join('')}` : ''}
+    ${(h.history || []).length ? `<h3>보유 이력</h3>${h.history.map(x => `<div class="kv">Rev.${esc(x.rev)} (${esc(x.date)}) → ${esc(x.replacedAt)}에 교체</div>`).join('')}` : ''}</div>
+  <h3>📝 개정사항 정리표</h3>
+  ${ch.slice().reverse().map((c, ri) => { const i = ch.length - 1 - ri; return `<div class="card"><div class="t" style="font-weight:700">Rev.${esc(c.rev)} · ${esc(c.date)} · ${esc(c.clause)}</div>${c.before ? `<div class="m">변경 전: ${esc(c.before)}</div>` : ''}${c.after ? `<div class="m">변경 후: ${esc(c.after)}</div>` : ''}${c.impact ? `<div class="m">⚠ 현장 영향: ${esc(c.impact)}</div>` : ''}<div class="btns"><button class="btn danger sm" data-hbcx="${i}">삭제</button></div></div>`; }).join('') || '<div class="card"><small class="hint">개정 내용 중 현장에 영향이 있는 것을 정리해 두세요. PDF 앞쪽 개정이력표를 참고하면 좋아요.</small></div>'}
+  <div class="card"><div class="row"><div><label>Rev</label><input id="hbc-rev" type="text" value="${esc(h.rev || '')}"></div><div><label>개정일</label><input id="hbc-date" type="date" value="${esc(h.date || '')}"></div></div>
+    <label>조항</label><input id="hbc-clause" type="text" placeholder="예: 3.2 신호기 설치위치">
+    <label>변경 전 요약</label><textarea id="hbc-before" style="min-height:60px"></textarea><label>변경 후 요약</label><textarea id="hbc-after" style="min-height:60px"></textarea>
+    <label>현장 영향 메모</label><input id="hbc-impact" type="text" placeholder="예: 우리 현장 입환신호기 3기 위치 재검토 필요">
+    <div class="btns"><button class="btn" id="hbc-add">＋ 정리표에 추가</button></div></div>
+  <div class="btns"><button class="btn ghost" id="hbd-back">← 목록으로</button><button class="btn danger" id="hbd-del">이 편람 삭제</button></div>`;
+}
+async function hbOpen(hid, page) {
+  const h = cache.hbs.find(x => x.id === hid); if (!h) return;
+  await openViewer({ id: h.id, kind: 'hb', no: h.no, name: h.title + (h.rev ? ` (Rev.${h.rev})` : ''), versions: [{ vid: 'cur', fileId: h.fileId, pages: h.pages }], cur: 'cur' }, 'cur', page);
+  if (state.hbsq && state.hbs === 'search') toast(`${page}쪽에서 「${state.hbsq}」을(를) 찾아보세요`);
+}
+async function hbAddBookmark() {
+  const h = cache.hbs.find(x => x.id === dv.d.id); if (!h) return;
+  const label = prompt(`${dv.page}쪽 북마크 이름`, ''); if (label === null) return;
+  h.bookmarks = (h.bookmarks || []).concat({ page: dv.page, label: label.trim() || `${dv.page}쪽` }).sort((a, b) => a.page - b.page);
+  await dbPut('hbs', h); await reload(); toast('북마크했어요 🔖');
+}
+async function vTocPanel() {
+  const old = $('#vtoc'); if (old) return old.remove();
+  const items = [];
+  const h = dv.d.kind === 'hb' ? cache.hbs.find(x => x.id === dv.d.id) : null;
+  if (h) { if (h.tocPage) items.push([h.tocPage, '📑 목차 페이지']); if (h.revPage) items.push([h.revPage, '📜 개정이력표']); (h.bookmarks || []).forEach(b => items.push([b.page, '🔖 ' + b.label])); }
+  try {
+    const ol = dv.doc ? await dv.doc.getOutline() : null;
+    const walk = async (arr, dep) => { for (const o of arr || []) { try { const dest = typeof o.dest === 'string' ? await dv.doc.getDestination(o.dest) : o.dest; if (dest) items.push([await dv.doc.getPageIndex(dest[0]) + 1, '  '.repeat(dep) + o.title]); } catch (e) { } if (dep < 2) await walk(o.items, dep + 1); } };
+    await walk(ol, 0);
+  } catch (e) { }
+  const el = document.createElement('div'); el.id = 'vtoc'; el.className = 'vtoc';
+  el.innerHTML = `<div class="kv" style="color:#fff;margin:0 0 8px"><b>목차 · 북마크</b><button class="vb" id="vtoc-x">✕</button></div>` + (items.map(([p, t]) => `<button class="vtoc-i" data-vtp="${p}"><span>${esc(t)}</span><small>${p}쪽</small></button>`).join('') || '<small>목차 정보가 없는 PDF예요. 🔖로 북마크를 만들어 보세요.</small>');
+  $('#vstage').appendChild(el);
+  $('#vtoc-x').onclick = () => el.remove();
+  el.querySelectorAll('[data-vtp]').forEach(b => b.onclick = () => { el.remove(); vGoPage(+b.dataset.vtp); });
+}
+function bindHb(on) {
+  document.querySelectorAll('[data-hbs]').forEach(b => b.onclick = () => { state.hbs = b.dataset.hbs; render(); });
+  on('hb-file', e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) hbImport(fs); }, 'change');
+  on('hb-q', e => { state.hbq = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#hb-q'); q.focus(); q.setSelectionRange(pos, pos); }, 'input');
+  on('hb-fav', e => { state.hbFav = e.target.checked; render(); }, 'change');
+  on('hb-reindex', hbReindex);
+  document.querySelectorAll('[data-hbopen]').forEach(b => b.onclick = () => hbOpen(b.dataset.hbopen, 1));
+  document.querySelectorAll('[data-hbgo]').forEach(b => b.onclick = () => { const [id, p] = b.dataset.hbgo.split(':'); hbOpen(id, +p); });
+  document.querySelectorAll('[data-hbinfo]').forEach(b => b.onclick = () => { hbform = { rec: JSON.parse(JSON.stringify(cache.hbs.find(x => x.id === b.dataset.hbinfo))) }; render(); window.scrollTo(0, 0); });
+  on('hbs-go', hbSearch); on('hbs-q', e => { if (e.key === 'Enter') hbSearch(); }, 'keydown');
+  on('hbc-auto', hbAuto);
+  on('hbc-cmp', async () => { state.hbChk = hbCompare($('#hbc-text').value); if (state.hbChk.total) { await hbMarkChecked(state.hbChk); toast('비교하고 확인 날짜를 기록했어요 ✔'); } render(); });
+  on('hbc-done', async () => { await hbMarkChecked(null); toast('확인 완료로 기록했어요 ✔'); render(); });
+  if (hbform) {
+    const save = async () => { await dbPut('hbs', hbform.rec); await reload(); };
+    on('hbd-back', () => { hbform = null; render(); });
+    on('hbd-fav', async e => { hbform.rec.fav = e.target.checked; await save(); });
+    document.querySelectorAll('[data-hbbm]').forEach(b => b.onclick = async () => { hbform.rec.bookmarks.splice(+b.dataset.hbbm, 1); await save(); render(); });
+    on('hbc-add', async () => {
+      const g = id => ($('#' + id).value || '').trim(), c = { rev: g('hbc-rev'), date: g('hbc-date'), clause: g('hbc-clause'), before: g('hbc-before'), after: g('hbc-after'), impact: g('hbc-impact') };
+      if (!c.clause && !c.after && !c.impact) return toast('조항이나 변경 내용을 입력해 주세요');
+      hbform.rec.changes = (hbform.rec.changes || []).concat(c); await save(); render(); toast('정리표에 추가했어요 ✔');
+    });
+    document.querySelectorAll('[data-hbcx]').forEach(b => b.onclick = async () => { if (!confirm('이 정리 항목을 삭제할까요?')) return; hbform.rec.changes.splice(+b.dataset.hbcx, 1); await save(); render(); });
+    on('hbd-del', async () => { if (!confirm('이 편람과 메모·북마크를 삭제할까요?')) return; const h = hbform.rec; await dbDel('files', h.fileId); for (const x of await dbAll('hbtext')) if (x.fileId === h.fileId) await dbDel('hbtext', x.k); for (const a of await dbAll('annots')) if (a.fileId === h.fileId) await dbDel('annots', a.k); await dbDel('hbs', h.id); hbform = null; await reload(); render(); toast('삭제했어요'); });
+  }
+}
+
+/* ---------- 렌더링 · 이벤트 ---------- */
+function render() {
+  $('#hd-title').textContent = TITLES[state.tab] || '';
+  $('#hd-home').style.visibility = state.tab === 'home' ? 'hidden' : 'visible';
+  let html = '';
+  if (dbError) html += `<div class="banner">⚠ 저장소를 사용할 수 없어요 (${esc(dbError)}). 지금 입력한 기록은 저장되지 않아요. 사파리나 크롬에서 다시 열어 주세요.</div>`;
+  else if ((cache.logs.length + cache.journals.length + cache.trades.length) > 0 && (!lastBackup || Date.now() - lastBackup > 7 * 864e5)) html += `<div class="banner">💾 최근 7일 안에 백업한 기록이 없어요. 백업 탭에서 백업해 두세요.</div>`;
+  if (state.tab === 'home') html += homeHTML();
+  else if (state.tab === 'draw') html += drawHTML();
+  else if (state.tab === 'man') html += hbHTML();
+  else if (state.tab === 'log') { if (state.sub === 'input' && !form) return startLog(); html += logTabHTML(); }
+  else if (state.tab === 'prog') html += progHTML();
+  else if (state.tab === 'ref') html += tradesHTML();
+  else if (state.tab === 'journal') { if (!jform) newJournal(); html += journalHTML(); }
+  else html += dataHTML();
+  $('#app').innerHTML = html;
+  bind();
+}
+function bind() {
+  const on = (id, fn, ev = 'click') => { const e = $('#' + id); if (e) e.addEventListener(ev, fn); };
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+  on('p-cut', e => { state.cut = e.target.value || ''; render(); }, 'change');
+  if (state.tab === 'log') {
+    document.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { collectLog(); state.sub = b.dataset.sub; if (state.sub === 'input' && !form) return startLog(); render(); });
+    if (state.sub === 'input' && form) {
+      on('f-save', saveLog); on('f-new', () => startLog()); on('f-del', deleteLog);
+      document.querySelectorAll('[data-dw]').forEach(b => b.onclick = () => { collectLog(); form.log.drawing = form.log.drawing === b.dataset.dw ? '' : b.dataset.dw; render(); });
+      on('f-file', async e => {
+        collectLog();
+        for (const f of e.target.files) {
+          try { const b = await shrink(f); form.photos.push({ id: uid(), blob: b, caption: '', kind: '', url: URL.createObjectURL(b) }); }
+          catch (err) { toast('사진 처리 실패'); }
+        }
+        e.target.value = ''; $('#photos').innerHTML = photosHTML(); bindPhotoRm(); saveDraft();
+      }, 'change');
+      bindPhotoRm(); bindRes();
+    }
+    if (state.sub === 'list') {
+      on('q', e => { state.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }, 'input');
+      document.querySelectorAll('[data-open]').forEach(el => el.onclick = () => startLog(el.dataset.open));
+    }
+  }
+  if (state.tab === 'prog') on('p-goto', () => { state.tab = 'ref'; state.mtab = 'trades'; render(); });
+  if (state.tab === 'ref') {
+    document.querySelectorAll('[data-mt]').forEach(b => b.onclick = () => { state.mtab = b.dataset.mt; mform = null; render(); });
+    on('t-csv', e => { if (e.target.files[0]) importTradesCSV(e.target.files[0]); e.target.value = ''; }, 'change'); on('t-tpl', tradesTemplate);
+    on('m-add', newMaster); on('m-save', saveMaster); on('m-cancel', () => { mform = null; render(); });
+    on('m-del', async () => { if (!confirm('삭제할까요? 되돌릴 수 없어요.')) return; await dbDel(state.mtab, mform.rec.id); await reload(); mform = null; render(); toast('삭제했어요'); });
+    document.querySelectorAll('[data-medit]').forEach(el => el.onclick = () => { mform = { isNew: false, rec: Object.assign({}, cache[state.mtab].find(x => x.id === el.dataset.medit)) }; render(); window.scrollTo(0, 0); });
+  }
+  if (state.tab === 'journal') bindJournal(on);
+  if (state.tab === 'draw') bindDraw(on);
+  if (state.tab === 'man') bindHb(on);
+  if (state.tab === 'data') {
+    on('d-json', () => exportJSON('all')); on('d-json-w', () => exportJSON('work')); on('d-json-p', () => exportJSON('personal')); on('pa-go', archivePhotos); on('pa-m', () => render(), 'change'); on('d-csv1', exportLogCSV); on('d-csv2', exportJournalCSV); on('d-csv3', exportProgCSV); 
+    on('d-import', e => { if (e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ''; }, 'change');
+  }
+}
+function bindRes() {
+  document.querySelectorAll('[data-rr]').forEach(b => b.onclick = () => { collectLog(); form.log.results.splice(+b.dataset.rr, 1); $('#res').innerHTML = resRowsHTML(); bindRes(); });
+  const add = $('#f-addres'); if (add) add.onclick = () => { collectLog(); form.log.results.push({ tradeId: '', inQty: '', setQty: '' }); $('#res').innerHTML = resRowsHTML(); bindRes(); };
+}
+function bindPhotoRm() {
+  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
+    collectLog();
+    const p = form.photos.splice(+b.dataset.rm, 1)[0];
+    if (p && (form.log.photoIds || []).includes(p.id)) form.removed.push(p.id);
+    $('#photos').innerHTML = photosHTML(); bindPhotoRm();
+  });
+}
+const go = tab => {
+  if (state.tab === 'log' && state.sub === 'input') collectLog();
+  if (state.tab === 'journal') collectJournal();
+  if (tab !== 'ref') mform = null;
+  if (tab !== 'draw') dform = null;
+  if (tab !== 'man') hbform = null;
+  if (tab === 'journal' && state.tab !== 'journal') { state.ll = 'write'; sform = null; spform = null; tplDraft = null; }
+  if (tab === 'ref') state.mtab = 'trades';
+  if (tab === 'log' && state.tab !== 'log') state.sub = 'input';
+  state.tab = tab; render(); window.scrollTo(0, 0);
+};
+$('#hd-home').onclick = () => go('home');
+
+/* ---------- 시작 ---------- */
+(async () => {
+  try {
+    db = await openDB();
+    await reload();
+    const m = await dbGet('meta', 'lastBackup'); lastBackup = m ? m.v : 0;
+    const hc = await dbGet('meta', 'hbChecked'); hbChecked = hc ? hc.v : 0;
+    const tp = await dbGet('meta', 'starTpl'); if (tp && Array.isArray(tp.v) && tp.v.length) starTpl = tp.v;
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  } catch (e) { dbError = e.message || '알 수 없는 오류'; db = null; }
+  render();
+})();
+</script>
+</body>
+</html>
