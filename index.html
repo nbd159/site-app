@@ -89,7 +89,17 @@ details.ckbox summary{font-weight:700;min-height:30px;cursor:pointer}
 .ckf.rel{border-color:var(--warn);background:var(--warn-bg)}
 .ckf.on{border-color:var(--pri);background:var(--pri);color:var(--pri-tx)}
 .ckf.on small{color:var(--pri-tx)}
-.ckpanel{border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+.ckpanel{border-top:1px solid var(--line);margin-top:4px;padding-top:8px}
+.ckts{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+.ckt{flex:none;min-height:46px;border:1px solid var(--line);border-radius:10px;background:var(--card);padding:4px 12px;font-weight:700;font-size:14px;color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ckt small{font-weight:400;font-size:11px;color:var(--sub)}
+.ckt.on{background:var(--pri);color:var(--pri-tx);border-color:var(--pri)}.ckt.on small{color:var(--pri-tx)}
+.ckt.add{color:var(--pri);border-style:dashed}
+.ckinst{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card);margin-top:4px}
+.ckopt{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;font-size:13px}
+.ckopt span{width:72px;color:var(--sub)}
+.ckopt button{min-height:38px;padding:4px 12px;border:1px solid var(--line);border-radius:99px;background:var(--bg);font-size:14px;color:var(--tx)}
+.ckopt button.on{background:var(--pri);border-color:var(--pri);color:var(--pri-tx)}
 .ck-s{font-size:13px;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ckref{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:4px 8px;font-size:12px;color:var(--pri);min-height:30px}
 .ckin{align-items:center;flex-wrap:nowrap}
@@ -208,6 +218,7 @@ async function reload() {
   const byDate = (a, b) => (b.date.localeCompare(a.date)) || ((b.updatedAt || 0) - (a.updatedAt || 0));
   const byCreated = (a, b) => (a.createdAt || 0) - (b.createdAt || 0);
   cache.logs = (await dbAll('logs')).sort(byDate);
+  cache.logs.forEach(l => { if (l.ck || l.ckT) ckMigrate(l); });
   cache.journals = (await dbAll('journals')).sort(byDate);
   cache.trades = (await dbAll('trades')).sort(byCreated);
   cache.drawings = (await dbAll('drawings')).sort(byCreated);
@@ -286,7 +297,7 @@ async function startLog(id) {
       toast('작성 중이던 일보를 복구했어요');
     }
   }
-  form = { log, isNew: !id, photos, removed: [] }; state.ckFac = ''; state.ckOpen = false;
+  form = { log, isNew: !id, photos, removed: [] }; state.ckFac = ''; state.ckInst = ''; state.ckOpen = false;
   state.tab = 'log'; state.sub = 'input';
   render(); window.scrollTo(0, 0);
 }
@@ -480,46 +491,85 @@ function relatedFacs(results) {
   }
   return [...set];
 }
-function ckCounts(l, fac) {
-  const ck = l.ck || {}; let ok = 0, ng = 0, na = 0;
-  for (const it of CK) { if (fac && it.fac !== fac) continue; const r = ck[it.id] && ck[it.id].r; if (r === 'ok') ok++; else if (r === 'ng') ng++; else if (r === 'na') na++; }
+/* 대상(시설물 1개)별 체크 · 조건에 맞는 항목만 표시 */
+const CK_OPT = {
+  sig: [['kind', '종류', ['장내', '출발', '폐색']], ['mount', '형식', ['자립형', '벽형']], ['loc', '위치', ['역구내', '역간']], ['rt', '진로표시기', ['있음', '없음']]],
+  shu: [['mount', '형식', ['단등형', '다등형']]],
+  bal: [['infill', '인필발리스', ['구내폐색 있음', '구내폐색 없음', '역방향', '인필 아님']]],
+  pm: [['rail', '레일', ['50kg', '60kg']]],
+  af: [['ins', '절연', ['무절연', '유절연·종단부']], ['loc', '위치', ['역간', '역구내']]],
+  imp: [['loc', '위치', ['역간', '역구내']]]
+};
+const CK_TAG = {
+  sig02: { rt: '있음' }, sig09: { rt: '있음' }, sig04: { mount: '자립형' }, sig05: { mount: '벽형' }, sig06: { mount: '자립형' },
+  sig12: { kind: '출발' }, sig13: { kind: '출발' }, sig15: { loc: '역구내' }, sig16: { loc: '역구내' }, sig17: { loc: '역간' }, sig18: { loc: '역간' },
+  shu02: { mount: '단등형' }, shu03: { mount: '다등형' },
+  bal01: { infill: '구내폐색 있음' }, bal02: { infill: '구내폐색 없음' }, bal03: { infill: '역방향' },
+  pm01: { rail: '50kg' }, pm02: { rail: '60kg' }, pm05: { rail: '60kg' },
+  af01: { ins: '무절연' }, af02: { ins: '유절연·종단부' }, af04: { loc: '역간' }, af05: { loc: '역구내' }, af08: { loc: '역구내' },
+  imp09: { loc: '역구내' }
+};
+const ckApplies = (it, inst) => { const tg = CK_TAG[it.id]; if (!tg) return true; return Object.entries(tg).every(([k, v]) => !inst.opt || !inst.opt[k] || inst.opt[k] === v); };
+const ckItemsFor = inst => CK.filter(i => i.fac === inst.fac && ckApplies(i, inst));
+function ckMigrate(l) {
+  l.ckI = l.ckI || [];
+  if (l.ck && Object.keys(l.ck).length) {
+    for (const f of CK_FAC) { const ck = {}; for (const it of CK) if (it.fac === f.id && l.ck[it.id]) ck[it.id] = l.ck[it.id]; if (Object.keys(ck).length) l.ckI.push({ iid: uid(), fac: f.id, name: (l.ckT && l.ckT[f.id]) || `${f.name} 1`, sta: '', opt: {}, ck }); }
+  }
+  delete l.ck; delete l.ckT;
+}
+function ckCounts(l, fac, inst) {
+  let ok = 0, ng = 0, na = 0;
+  for (const x of (inst ? [inst] : (l.ckI || []).filter(x => !fac || x.fac === fac))) for (const it of ckItemsFor(x)) { const r = x.ck[it.id] && x.ck[it.id].r; if (r === 'ok') ok++; else if (r === 'ng') ng++; else if (r === 'na') na++; }
   return { ok, ng, na, done: ok + ng + na };
 }
+const badgeHTML = r => r === 'ok' ? '<span class="ckb ok">✔ 적합</span>' : r === 'ng' ? '<span class="ckb ng">✖ 미흡</span>' : r === 'na' ? '<span class="ckb na">해당없음</span>' : '';
+function ckInstHTML(inst) {
+  const f = ckFacOf(inst.fac), opts = CK_OPT[inst.fac] || [], its = ckItemsFor(inst), hidden = CK.filter(i => i.fac === inst.fac).length - its.length, n = ckCounts(form.log, null, inst);
+  return `<div class="ckinst">
+    <div class="row" style="align-items:flex-end"><div><label style="margin-top:0">대상 이름</label><input class="ck-nm" type="text" placeholder="예: 장내 2호" value="${esc(inst.name)}"></div><div><label style="margin-top:0">위치 (STA)</label><input class="ck-sta" type="text" placeholder="예: 1+250" value="${esc(inst.sta || '')}"></div></div>
+    ${opts.map(([k, lab, vals]) => `<div class="ckopt"><span>${lab}</span>${vals.map(v => `<button type="button" class="${inst.opt && inst.opt[k] === v ? 'on' : ''}" data-cko="${k}|${esc(v)}">${esc(v)}</button>`).join('')}</div>`).join('')}
+    <small class="hint">${opts.length ? `조건을 고르면 이 대상에 해당하는 항목만 보여요.${hidden ? ` (해당 없는 ${hidden}개 숨김)` : ''} ` : ''}진행 ${n.done}/${its.length}</small>
+    <div class="btns" style="margin:8px 0"><button type="button" class="btn ghost sm" data-ckref="${inst.fac}|">📘 ${esc(f.doc)} 열기</button><button type="button" class="btn ghost sm" id="ck-dup">⧉ 같은 조건으로 대상 추가</button><button type="button" class="btn danger sm" id="ck-del">이 대상 삭제</button></div>
+    ${its.map(it => {
+      const c = inst.ck[it.id] || {};
+      const input = it.t === 'visual' ? `<div class="seg"><button type="button" data-ckv="${it.id}:ok" class="ok ${c.r === 'ok' ? 'on' : ''}">✔ 적합</button><button type="button" data-ckv="${it.id}:ng" class="diff ${c.r === 'ng' ? 'on' : ''}">✖ 미흡</button><button type="button" data-ckv="${it.id}:na" class="na ${c.r === 'na' ? 'on' : ''}">— 해당없음</button></div>`
+        : it.t === 'aftable' ? `<div class="row ckin"><div><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="궤도길이" value="${esc(c.v ?? '')}"><small class="hint">궤도길이 (m)</small></div><div><input class="ck-v2" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="송신케이블" value="${esc(c.v2 ?? '')}"><small class="hint">송신케이블 (m)</small></div><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`
+        : `<div class="row ckin"><div style="flex:2"><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="측정값" value="${esc(c.v ?? '')}"></div><span class="cku">${esc(it.unit)}</span><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`;
+      return `<div class="ck" data-ckrow="${it.id}"><div class="ck-t"><b>${esc(it.item)}</b>${it.cond ? ` <small class="hint">· ${esc(it.cond)}</small>` : ''} <span class="ckbadge">${badgeHTML(c.r)}</span></div>
+        <div class="ck-s">기준: ${esc(it.std)} ${it.kw ? `<button type="button" class="ckref" data-ckref="${inst.fac}|${esc(it.kw)}">📘 근거</button>` : ''}</div>${input}
+        <input class="ck-m" data-ckid="${it.id}" type="text" placeholder="메모 (미흡 내용·조치)" value="${esc(c.m || '')}"></div>`;
+    }).join('')}</div>`;
+}
 function checksHTML() {
-  const l = form.log; l.ck = l.ck || {}; l.ckT = l.ckT || {};
+  const l = form.log; ckMigrate(l);
   const rel = relatedFacs(l.results), all = ckCounts(l), cur = state.ckFac;
-  const chip = f => { const n = ckCounts(l, f.id), tot = CK.filter(i => i.fac === f.id).length; return `<button type="button" class="ckf ${cur === f.id ? 'on' : ''} ${rel.includes(f.id) ? 'rel' : ''}" data-ckf="${f.id}">${rel.includes(f.id) ? '📍 ' : ''}${esc(f.name)}<small>${n.done}/${tot}${n.ng ? ` · ✖${n.ng}` : ''}</small></button>`; };
+  const chip = f => { const n = ckCounts(l, f.id), cnt = l.ckI.filter(x => x.fac === f.id).length; return `<button type="button" class="ckf ${cur === f.id ? 'on' : ''} ${rel.includes(f.id) ? 'rel' : ''}" data-ckf="${f.id}">${rel.includes(f.id) ? '📍 ' : ''}${esc(f.name)}<small>${cnt ? `대상 ${cnt} · ` : ''}확인 ${n.done}${n.ng ? ` · ✖${n.ng}` : ''}</small></button>`; };
   let panel = '';
   if (cur) {
-    const f = ckFacOf(cur);
-    panel = `<div class="ckpanel"><div class="row" style="align-items:flex-end"><div><label style="margin-top:0">대상 (시설물 번호·STA)</label><input class="ck-tg" type="text" placeholder="예: 장내 2호 / STA 1+250" value="${esc(l.ckT[cur] || '')}"></div><button type="button" class="btn ghost sm" data-ckref="${cur}|" style="flex:none;min-width:auto">📘 ${esc(f.doc)} 열기</button></div>
-      ${CK.filter(i => i.fac === cur).map(it => {
-        const c = l.ck[it.id] || {}, r = ckJudge(it, c);
-        const badge = r === 'ok' ? '<span class="ckb ok">✔ 적합</span>' : r === 'ng' ? '<span class="ckb ng">✖ 미흡</span>' : r === 'na' ? '<span class="ckb na">해당없음</span>' : '';
-        const input = it.t === 'visual' ? `<div class="seg"><button type="button" data-ckv="${it.id}:ok" class="ok ${c.r === 'ok' ? 'on' : ''}">✔ 적합</button><button type="button" data-ckv="${it.id}:ng" class="diff ${c.r === 'ng' ? 'on' : ''}">✖ 미흡</button><button type="button" data-ckv="${it.id}:na" class="na ${c.r === 'na' ? 'on' : ''}">— 해당없음</button></div>`
-          : it.t === 'aftable' ? `<div class="row ckin"><div><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="궤도길이" value="${esc(c.v ?? '')}"><small class="hint">궤도길이 (m)</small></div><div><input class="ck-v2" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="송신케이블" value="${esc(c.v2 ?? '')}"><small class="hint">송신케이블 (m)</small></div><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`
-          : `<div class="row ckin"><div style="flex:2"><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="측정값" value="${esc(c.v ?? '')}"></div><span class="cku">${esc(it.unit)}</span><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`;
-        return `<div class="ck" data-ckrow="${it.id}"><div class="ck-t"><b>${esc(it.item)}</b>${it.cond ? ` <small class="hint">· ${esc(it.cond)}</small>` : ''} <span class="ckbadge">${badge}</span></div>
-          <div class="ck-s">기준: ${esc(it.std)} ${it.kw ? `<button type="button" class="ckref" data-ckref="${cur}|${esc(it.kw)}">📘 근거</button>` : ''}</div>${input}
-          <input class="ck-m" data-ckid="${it.id}" type="text" placeholder="메모 (위치·미흡 내용·조치)" value="${esc(c.m || '')}"></div>`;
-      }).join('')}</div>`;
+    const insts = l.ckI.filter(x => x.fac === cur), sel = insts.find(x => x.iid === state.ckInst) || insts[0];
+    if (sel) state.ckInst = sel.iid;
+    panel = `<div class="ckpanel"><div class="ckts">${insts.map(x => { const n = ckCounts(l, null, x); return `<button type="button" class="ckt ${sel && x.iid === sel.iid ? 'on' : ''}" data-cki="${x.iid}">${esc(x.name || '(이름 없음)')}<small>${n.done}/${ckItemsFor(x).length}${n.ng ? ' · ✖' + n.ng : ''}</small></button>`; }).join('')}<button type="button" class="ckt add" id="ck-add">＋ 대상 추가</button></div>
+      ${sel ? ckInstHTML(sel) : `<small class="hint">「＋ 대상 추가」를 눌러 오늘 확인할 ${esc(ckFacOf(cur).name)}(예: 장내 1호)를 만드세요. 대상마다 따로 체크돼요.</small>`}</div>`;
   }
-  return `<details class="ckbox" ${all.done || cur || state.ckOpen || rel.length ? "open" : ""}><summary>주요시설물 시공 체크리스트 <small class="hint">(확인 ${all.done}${all.ng ? ` · <b style="color:var(--bad)">미흡 ${all.ng}</b>` : ''})</small></summary>
-    <small class="hint">${rel.length ? '📍 표시는 오늘 실적 공종과 관련된 시설물이에요. ' : ''}숫자를 넣으면 기준과 비교해 적합·미흡이 자동으로 표시돼요. 참고용 자체 점검이에요.</small>
+  return `<details class="ckbox" ${all.done || cur || state.ckOpen || rel.length ? 'open' : ''}><summary>주요시설물 시공 체크리스트 <small class="hint">(대상 ${l.ckI.length} · 확인 ${all.done}${all.ng ? ` · <b style="color:var(--bad)">미흡 ${all.ng}</b>` : ''})</small></summary>
+    <small class="hint">${rel.length ? '📍 표시는 오늘 실적 공종과 관련된 시설물이에요. ' : ''}시설물을 고르고 대상(장내 1호, 2호…)을 추가해 대상마다 체크하세요. 숫자를 넣으면 적합·미흡이 자동 표시돼요.</small>
     <div class="ckfs">${CK_FAC.map(chip).join('')}</div>${panel}</details>`;
 }
+const curInst = () => form && form.log.ckI && form.log.ckI.find(x => x.iid === state.ckInst && x.fac === state.ckFac);
 function ckCollect() {
-  const l = form.log; if (!l) return; l.ck = l.ck || {}; l.ckT = l.ckT || {};
-  const g = id => (l.ck[id] = l.ck[id] || {});
+  const inst = curInst(); if (!inst) return;
+  const g = id => (inst.ck[id] = inst.ck[id] || {});
+  const nm = $('.ck-nm'), st = $('.ck-sta'); if (nm) inst.name = nm.value.trim(); if (st) inst.sta = st.value.trim();
   document.querySelectorAll('.ck-v').forEach(e => { g(e.dataset.ckid).v = e.value; });
   document.querySelectorAll('.ck-v2').forEach(e => { g(e.dataset.ckid).v2 = e.value; });
   document.querySelectorAll('.ck-m').forEach(e => { g(e.dataset.ckid).m = e.value.trim(); });
-  const tg = $('.ck-tg'); if (tg && state.ckFac) l.ckT[state.ckFac] = tg.value.trim();
-  for (const it of CK) { const c = l.ck[it.id]; if (!c) continue; if (it.t !== 'visual' && c.r !== 'na') c.r = ckJudge(it, Object.assign({}, c, { r: '' })); }
+  for (const it of CK) { const c = inst.ck[it.id]; if (!c || it.t === 'visual' || c.r === 'na') continue; c.r = ckJudge(it, Object.assign({}, c, { r: '' })); }
 }
 function ckClean(l) {
-  const ck = {}; for (const [k, c] of Object.entries(l.ck || {})) if (c && (c.r || c.m || (c.v !== '' && c.v != null) || (c.v2 !== '' && c.v2 != null))) ck[k] = c;
-  l.ck = ck; const t = {}; for (const [k, v] of Object.entries(l.ckT || {})) if (v) t[k] = v; l.ckT = t;
+  ckMigrate(l);
+  for (const x of l.ckI) { const ck = {}; for (const [k, c] of Object.entries(x.ck || {})) if (c && (c.r || c.m || (c.v !== '' && c.v != null) || (c.v2 !== '' && c.v2 != null))) ck[k] = c; x.ck = ck; }
+  l.ckI = l.ckI.filter(x => Object.keys(x.ck).length || x.sta || (x.name && !/ \d+$/.test(x.name)));
 }
 function ckRefOpen(fac, kw) {
   const f = ckFacOf(fac), h = cache.hbs.find(x => x.no === f.doc);
@@ -533,24 +583,32 @@ function ckRefOpen(fac, kw) {
 }
 function bindChecks() {
   const redraw = () => { state.ckOpen = true; $('#chk').innerHTML = checksHTML(); bindChecks(); saveDraft(); };
-  document.querySelectorAll('[data-ckf]').forEach(b => b.onclick = () => { collectLog(); state.ckFac = state.ckFac === b.dataset.ckf ? '' : b.dataset.ckf; redraw(); });
-  document.querySelectorAll('[data-ckv]').forEach(b => b.onclick = () => { collectLog(); const [id, r] = b.dataset.ckv.split(':'), c = (form.log.ck[id] = form.log.ck[id] || {}); c.r = c.r === r ? '' : r; if (!c.r) { const it = CK.find(i => i.id === id); if (it.t !== 'visual') c.r = ckJudge(it, c); } redraw(); });
+  const l = form.log;
+  const newInst = (fac, from) => { const n = l.ckI.filter(x => x.fac === fac).length + 1, base = from ? from.name.replace(/\s*\d+\s*호?$/, '') : ''; const x = { iid: uid(), fac, name: from ? `${base || ckFacOf(fac).name} ${n}${/호$/.test(from.name) ? '호' : ''}`.trim() : `${ckFacOf(fac).name} ${n}`, sta: '', opt: from ? Object.assign({}, from.opt) : {}, ck: {} }; l.ckI.push(x); state.ckInst = x.iid; return x; };
+  document.querySelectorAll('[data-ckf]').forEach(b => b.onclick = () => { collectLog(); const f = b.dataset.ckf; state.ckFac = state.ckFac === f ? '' : f; if (state.ckFac && !l.ckI.some(x => x.fac === f)) newInst(f); state.ckInst = (l.ckI.find(x => x.fac === state.ckFac) || {}).iid; redraw(); });
+  document.querySelectorAll('[data-cki]').forEach(b => b.onclick = () => { collectLog(); state.ckInst = b.dataset.cki; redraw(); });
+  const add = $('#ck-add'); if (add) add.onclick = () => { collectLog(); newInst(state.ckFac); redraw(); setTimeout(() => { const e = $('.ck-nm'); if (e) { e.focus(); e.select(); } }, 50); };
+  const dup = $('#ck-dup'); if (dup) dup.onclick = () => { collectLog(); newInst(state.ckFac, curInst()); redraw(); toast('같은 조건으로 새 대상을 만들었어요. 이름·위치만 바꾸세요'); };
+  const del = $('#ck-del'); if (del) del.onclick = () => { collectLog(); const x = curInst(); if (!x || (Object.keys(x.ck).length && !confirm(`「${x.name}」의 체크 기록을 지울까요?`))) return; l.ckI = l.ckI.filter(y => y !== x); state.ckInst = (l.ckI.find(y => y.fac === state.ckFac) || {}).iid; redraw(); };
+  document.querySelectorAll('[data-cko]').forEach(b => b.onclick = () => { collectLog(); const x = curInst(), [k, v] = b.dataset.cko.split('|'); x.opt = x.opt || {}; x.opt[k] = x.opt[k] === v ? '' : v; redraw(); });
+  document.querySelectorAll('[data-ckv]').forEach(b => b.onclick = () => { collectLog(); const x = curInst(), [id, r] = b.dataset.ckv.split(':'), c = (x.ck[id] = x.ck[id] || {}); c.r = c.r === r ? '' : r; if (!c.r) { const it = CK.find(i => i.id === id); if (it.t !== 'visual') c.r = ckJudge(it, c); } redraw(); });
   document.querySelectorAll('[data-ckref]').forEach(b => b.onclick = () => { collectLog(); const [fac, kw] = b.dataset.ckref.split('|'); ckRefOpen(fac, kw); });
   document.querySelectorAll('.ck-v,.ck-v2').forEach(e => e.addEventListener('input', () => {
-    const l = form.log, id = e.dataset.ckid, it = CK.find(i => i.id === id), c = (l.ck[id] = l.ck[id] || {});
+    const x = curInst(), id = e.dataset.ckid, it = CK.find(i => i.id === id), c = (x.ck[id] = x.ck[id] || {});
     if (e.classList.contains('ck-v')) c.v = e.value; else c.v2 = e.value;
     if (c.r !== 'na') c.r = ckJudge(it, Object.assign({}, c, { r: '' }));
-    const r = c.r, row = document.querySelector(`[data-ckrow="${id}"] .ckbadge`);
-    if (row) row.innerHTML = r === 'ok' ? '<span class="ckb ok">✔ 적합</span>' : r === 'ng' ? '<span class="ckb ng">✖ 미흡</span>' : r === 'na' ? '<span class="ckb na">해당없음</span>' : '';
-    const n = ckCounts(l), sm = document.querySelector('details.ckbox summary small'); if (sm) sm.innerHTML = `(확인 ${n.done}${n.ng ? ` · <b style="color:var(--bad)">미흡 ${n.ng}</b>` : ''})`;
+    const row = document.querySelector(`[data-ckrow="${id}"] .ckbadge`); if (row) row.innerHTML = badgeHTML(c.r);
+    const n = ckCounts(l), sm = document.querySelector('details.ckbox summary small'); if (sm) sm.innerHTML = `(대상 ${l.ckI.length} · 확인 ${n.done}${n.ng ? ` · <b style="color:var(--bad)">미흡 ${n.ng}</b>` : ''})`;
+    const t = document.querySelector(`.ckt.on small`); if (t) { const m = ckCounts(l, null, x); t.textContent = `${m.done}/${ckItemsFor(x).length}${m.ng ? ' · ✖' + m.ng : ''}`; }
   }));
+  const nm = $('.ck-nm'); if (nm) nm.addEventListener('input', () => { const t = document.querySelector('.ckt.on'); if (t && t.firstChild) t.firstChild.textContent = nm.value || '(이름 없음)'; });
 }
 function ckSummaryText(l, onlyNg) {
   const out = [];
-  for (const f of CK_FAC) {
-    const its = CK.filter(i => i.fac === f.id && l.ck && l.ck[i.id] && (onlyNg ? l.ck[i.id].r === 'ng' : l.ck[i.id].r));
-    if (!its.length) continue;
-    out.push(`[${f.name}${l.ckT && l.ckT[f.id] ? ' ' + l.ckT[f.id] : ''}] ` + its.map(i => { const c = l.ck[i.id]; return `${i.item}${i.cond ? '(' + i.cond + ')' : ''}:${{ ok: '적합', ng: '미흡', na: '해당없음' }[c.r]}${c.v !== '' && c.v != null ? ' ' + c.v + (i.t === 'aftable' ? 'm/' + c.v2 + 'm' : i.unit) : ''}${c.m ? ' - ' + c.m : ''}`; }).join(', '));
+  for (const x of (l.ckI || [])) {
+    const f = ckFacOf(x.fac), its = ckItemsFor(x).filter(i => x.ck[i.id] && (onlyNg ? x.ck[i.id].r === 'ng' : x.ck[i.id].r));
+    if (!its.length && onlyNg) continue;
+    out.push(`[${f.name} ${x.name}${x.sta ? ' STA ' + x.sta : ''}] ` + its.map(i => { const c = x.ck[i.id]; return `${i.item}${i.cond ? '(' + i.cond + ')' : ''}:${{ ok: '적합', ng: '미흡', na: '해당없음' }[c.r]}${c.v !== '' && c.v != null ? ' ' + c.v + (i.t === 'aftable' ? 'm/' + c.v2 + 'm' : i.unit) : ''}${c.m ? ' - ' + c.m : ''}`; }).join(', '));
   }
   return out.join(' / ');
 }
@@ -558,7 +616,7 @@ function ckSummaryText(l, onlyNg) {
 function logFormHTML() {
   const l = form.log;
   if (form.isNew && cache.trades.length && !(l.results || []).length) l.results = [{ tradeId: '', inQty: '', setQty: '' }];
-  l.ck = l.ck || {}; l.ckT = l.ckT || {};
+  ckMigrate(l);
   return `
   <h2>${form.isNew ? '오늘 작업일보' : '일보 수정'}</h2>
   <div class="card">
@@ -592,7 +650,7 @@ async function saveLog() {
   l.results = (l.results || []).filter(r => r.tradeId || r.inQty || r.setQty);
   if (l.results.some(r => !r.tradeId)) return toast('수량을 입력한 줄은 공종을 선택해 주세요');
   ckClean(l);
-  if (!l.progress && !l.special && !l.drawingNote && !l.results.length && !form.photos.length && !Object.keys(l.ck).length) return toast('내용을 입력해 주세요');
+  if (!l.progress && !l.special && !l.drawingNote && !l.results.length && !form.photos.length && !l.ckI.length) return toast('내용을 입력해 주세요');
   try {
     l.photoIds = form.photos.map(p => p.id);
     for (const p of form.photos) await dbPut('photos', { id: p.id, blob: p.blob, caption: p.caption, kind: p.kind, logId: l.id });
@@ -613,7 +671,7 @@ async function deleteLog() {
 /* ---------- 일보 목록 ---------- */
 function listHTML() {
   const q = state.q.toLowerCase(), toks = q.split(/\s+/).filter(Boolean);
-  const rows = cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l) + ' ' + Object.values(l.ckT || {}).join(' ')].join(' ').toLowerCase())));
+  const rows = cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l)].join(' ').toLowerCase())));
   const nImp = cache.logs.filter(l => l.important).length;
   return `<h2>일보 목록 <small class="hint">(${rows.length}건)</small></h2>
   <input id="q" type="search" placeholder="공종, 구간, 특이사항, 체크리스트 메모 검색" value="${esc(state.q)}" style="margin-bottom:10px">
@@ -923,7 +981,7 @@ async function importJSON(file) {
 }
 function logFiltered() {
   const q = (state.q || '').toLowerCase(), toks = q.split(/\s+/).filter(Boolean);
-  return cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l) + ' ' + Object.values(l.ckT || {}).join(' ')].join(' ').toLowerCase())));
+  return cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l)].join(' ').toLowerCase())));
 }
 function exportLogCSV(filtered) {
   const rows = [['날짜', '중요', '날씨', '투입인원', '구간', '상세ID', '공종', '단위', '오늘 반입', '오늘 설치', '작업내용', '특이사항', '체크리스트(미흡)', '체크리스트(전체)', '사진수']];
@@ -1137,7 +1195,7 @@ let draftT = null;
 async function saveDraft() {
   if (!db || !form || !form.isNew) return;
   const l = form.log;
-  const empty = !l.progress && !l.special && !l.drawingNote && !l.crew && !l.section && !(l.results || []).some(r => r.tradeId || r.inQty || r.setQty) && !form.photos.length && !Object.keys(l.ck || {}).length && !l.important;
+  const empty = !l.progress && !l.special && !l.drawingNote && !l.crew && !l.section && !(l.results || []).some(r => r.tradeId || r.inQty || r.setQty) && !form.photos.length && !(l.ckI || []).some(x => Object.keys(x.ck || {}).length) && !l.important;
   try {
     if (empty) await dbDel('meta', 'draft');
     else await dbPut('meta', { k: 'draft', log: l, photos: form.photos.map(p => ({ id: p.id, blob: p.blob, caption: p.caption, kind: p.kind })) });
@@ -1671,7 +1729,7 @@ function bindHb(on) {
 
 
 /* ---------- 앱 점검 (5단계) ---------- */
-const APP_VER = '1.2.1 (2026-11-23)';
+const APP_VER = '1.3 (2026-11-23)';
 async function selfCheck() {
   const out = [], add = (ok, name, msg) => out.push({ ok, name, msg });
   const box = $('#sc-out'); if (box) box.innerHTML = '<small class="hint">점검 중…</small>';
