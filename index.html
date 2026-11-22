@@ -754,7 +754,7 @@ function progHTML() {
 }
 function tradesHTML() {
   state.mtab = 'trades';
-  const bar = `<h2>공종마스터</h2><div class="btns" style="margin:0 0 12px"><label class="btn ghost">📥 CSV 불러오기<input id="t-csv" type="file" accept=".csv,text/csv,text/plain" style="display:none"></label><button class="btn ghost" id="t-tpl">📄 CSV 양식 받기</button></div>`;
+  const bar = `<h2>공종마스터</h2><div class="btns" style="margin:0 0 12px"><label class="btn ghost">📥 엑셀·CSV 불러오기<input id="t-csv" type="file" style="display:none"></label><button class="btn ghost" id="t-tpl">📄 CSV 양식 받기</button></div>`;
   return refHTML().replace(/<div class="seg"[^>]*>[\s\S]*?<\/div>/, mform ? '' : bar);
 }
 const TRADE_MAP = { code: ['상세ID', 'ID', '코드'], name: ['공종명', '세부공종명', '공종'], unit: ['단위'], qty: ['계약수량', '수량'], wAll: ['전체가중치', '가중치'], wIn: ['반입가중치'], wSet: ['설치가중치'], prevIn: ['기존반입누계', '반입누계'], prevSet: ['기존설치누계', '설치누계'], plan: ['계획공종률', '계획'] };
@@ -774,31 +774,66 @@ function parseCSV(t) {
   if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
   return rows.filter(r => r.some(x => x.trim() !== ''));
 }
+let jszipP = null;
+function loadJSZip() { return jszipP || (jszipP = new Promise((res, rej) => { if (window.JSZip) return res(window.JSZip); const sc = document.createElement('script'); sc.src = 'lib/jszip.min.js'; sc.onload = () => res(window.JSZip); sc.onerror = () => { jszipP = null; rej(new Error('엑셀 읽기 도구를 불러오지 못했어요')); }; document.head.appendChild(sc); })); }
+async function readXLSX(file) {
+  const JSZip = await loadJSZip(), zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const xml = async n => { const f = zip.file(n); return f ? new DOMParser().parseFromString(await f.async('string'), 'application/xml') : null; };
+  const ss = await xml('xl/sharedStrings.xml'), strs = ss ? [...ss.getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+  const sheetName = Object.keys(zip.files).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort((a, b) => parseInt(a.match(/\d+/)) - parseInt(b.match(/\d+/)))[0];
+  if (!sheetName) throw new Error('엑셀 시트를 찾지 못했어요');
+  const sh = await xml(sheetName), rows = [];
+  const colIdx = r => { const m = r.match(/^[A-Z]+/)[0]; let n = 0; for (const ch of m) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  for (const row of sh.getElementsByTagName('row')) {
+    const out = [];
+    for (const c of row.getElementsByTagName('c')) {
+      const t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+      let val = t === 's' ? strs[+(v ? v.textContent : 0)] : t === 'inlineStr' ? [...c.getElementsByTagName('t')].map(x => x.textContent).join('') : (v ? v.textContent : '');
+      out[colIdx(c.getAttribute('r'))] = val == null ? '' : String(val);
+    }
+    rows.push([...out].map(x => x == null ? '' : x));
+  }
+  return rows.filter(r => r.some(x => String(x).trim() !== ''));
+}
 async function importTradesCSV(file) {
   try {
-    const buf = await file.arrayBuffer();
-    let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('euc-kr').decode(buf); }
-    const rows = parseCSV(text);
-    if (rows.length < 2) throw new Error('데이터가 없어요');
-    const heads = rows[0].map(normH), idx = {};
-    for (const k in TRADE_MAP) idx[k] = heads.findIndex(h => TRADE_MAP[k].map(normH).includes(h));
-    if (idx.name < 0) throw new Error("'공종명' 열을 찾지 못했어요");
-    let add = 0, upd = 0;
-    for (const r of rows.slice(1)) {
-      const name = (r[idx.name] || '').trim(); if (!name) continue;
-      const code = idx.code >= 0 ? (r[idx.code] || '').trim() : '';
-      const ex = cache.trades.find(t => code ? t.code === code : (!t.code && t.name === name));
-      const rec = ex ? Object.assign({}, ex) : { id: uid(), createdAt: Date.now() + add };
-      for (const k of Object.keys(TRADE_MAP)) {
-        if (k === 'name' || idx[k] < 0) continue;
-        const v = (r[idx[k]] || '').trim().replace(/[,%]/g, '');
-        rec[k] = (k === 'unit' || k === 'code') ? (r[idx[k]] || '').trim() : (v === '' || isNaN(Number(v)) ? '' : Number(v));
-      }
-      rec.name = name; rec.updatedAt = Date.now();
-      await dbPut('trades', rec); ex ? upd++ : add++;
+    let rows;
+    if (/\.xlsx$/i.test(file.name) || file.type.includes('spreadsheetml')) rows = await readXLSX(file);
+    else if (/\.xls$/i.test(file.name)) throw new Error('옛날 엑셀 형식(.xls)은 못 읽어요. 엑셀에서 .xlsx나 CSV로 저장해 주세요');
+    else {
+      const buf = await file.arrayBuffer();
+      if (new Uint8Array(buf.slice(0, 2)).join() === '80,75') rows = await readXLSX(file);
+      else { let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('euc-kr').decode(buf); } rows = parseCSV(text); }
     }
-    await reload(); toast(`공종 ${add}개 추가, ${upd}개 수정`); render();
-  } catch (e) { toast('불러오기 실패: ' + e.message); }
+    const hi = rows.findIndex(r => r.some(h => TRADE_MAP.name.map(normH).includes(normH(h))));
+    if (hi < 0) throw new Error("제목 줄에서 '공종명' 또는 '세부공종명' 열을 찾지 못했어요");
+    const heads = rows[hi].map(normH), idx = {}, find = names => heads.findIndex(h => names.map(normH).includes(h));
+    for (const k in TRADE_MAP) idx[k] = find(TRADE_MAP[k]);
+    const iWT = find(['작업구분']), iPrev = find(['전회실적']);
+    const num = v => { v = String(v ?? '').trim().replace(/[,%]/g, ''); return v === '' || isNaN(Number(v)) ? '' : Number(v); };
+    const recs = [];
+    for (const r of rows.slice(hi + 1)) {
+      const name = String(r[idx.name] || '').trim(); if (!name) continue;
+      const rec = { name };
+      for (const k of Object.keys(TRADE_MAP)) { if (k === 'name' || idx[k] < 0) continue; rec[k] = (k === 'unit' || k === 'code') ? String(r[idx[k]] || '').trim() : num(r[idx[k]]); }
+      if (iPrev >= 0 && idx.prevIn < 0 && idx.prevSet < 0) { const wt = String(r[iWT] || '').trim(), pv = num(r[iPrev]); rec.prevIn = wt === '반입' ? pv : ''; rec.prevSet = wt === '설치' ? pv : ''; }
+      recs.push(rec);
+    }
+    if (!recs.length) throw new Error('불러올 공종이 없어요');
+    let note = '';
+    const sumAll = recs.reduce((a, r) => a + (+r.wAll || 0), 0);
+    if (sumAll > 0 && sumAll <= 1.5) { recs.forEach(r => { if (r.wAll !== '') r.wAll = Math.round(r.wAll * 1e6) / 1e4; }); note = '가중치가 소수(0.0014 형식)라서 %로 바꿨어요. '; }
+    recs.forEach(r => { if (r.wIn !== '' && r.wSet !== '' && r.wIn != null && r.wSet != null && (+r.wIn + +r.wSet) <= 1.5) { r.wIn = Math.round(r.wIn * 1e4) / 100; r.wSet = Math.round(r.wSet * 1e4) / 100; } });
+    let add = 0, upd = 0;
+    for (const rec of recs) {
+      const ex = cache.trades.find(t => rec.code ? t.code === rec.code : (!t.code && t.name === rec.name));
+      const out = ex ? Object.assign({}, ex, rec) : Object.assign({ id: uid(), createdAt: Date.now() + add }, rec);
+      out.updatedAt = Date.now(); await dbPut('trades', out); ex ? upd++ : add++;
+    }
+    await reload(); render();
+    const tot = cache.trades.reduce((a, t) => a + (+t.wAll || 0), 0);
+    alert(`공종 불러오기 완료\n\n새로 추가 ${add}개, 수정 ${upd}개\n${note}\n전체 가중치 합계: ${tot.toFixed(2)}%${Math.abs(tot - 100) > 1 ? ' (100%가 아니어도 비율로 환산해 계산해요)' : ''}`);
+  } catch (e) { alert('공종 불러오기 실패\n\n' + e.message + '\n\n파일 형식: 엑셀(.xlsx) 또는 CSV\n필수 열: 공종명(또는 세부공종명)\n권장 열: 상세ID, 단위, 계약수량, 전체가중치, 반입가중치, 설치가중치'); }
 }
 function tradesTemplate() {
   dl('공종마스터_양식.csv', csvBlob([['상세ID', '공종명', '단위', '계약수량', '전체가중치(%)', '반입가중치(%)', '설치가중치(%)', '기존반입누계', '기존설치누계', '계획공종률(%)'], ['예) 전기신호_1', '예) 신호케이블', 'm', 1000, 60, 40, 60, 0, 0, 50]]));
@@ -1341,7 +1376,7 @@ function bindHb(on) {
 
 
 /* ---------- 앱 점검 (5단계) ---------- */
-const APP_VER = '1.0 (2026-11-23)';
+const APP_VER = '1.0.1 (2026-11-23)';
 async function selfCheck() {
   const out = [], add = (ok, name, msg) => out.push({ ok, name, msg });
   const box = $('#sc-out'); if (box) box.innerHTML = '<small class="hint">점검 중…</small>';
