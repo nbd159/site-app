@@ -57,6 +57,48 @@ nav button.on{color:var(--pri);font-weight:700}
 .rrow input,.rrow select{padding:10px 8px}
 .rrow button{border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--bad)}
 .rhead{display:grid;grid-template-columns:1fr 88px 88px 40px;gap:6px;font-size:12px;color:var(--sub)}
+.rcard{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--bg)}
+.rtop{display:flex;gap:8px}
+.r-pick{flex:1;min-height:46px;text-align:left;border:1px solid var(--pri);border-radius:10px;background:var(--card);color:var(--tx);padding:8px 12px;font-size:15px}
+.r-pick.empty{color:var(--pri);font-weight:700}
+.r-del{flex:none;width:46px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--bad)}
+.rgrid{display:grid;grid-template-columns:88px 1fr 1fr;gap:6px 8px;align-items:center;margin-top:8px;font-size:14px}
+.rgrid .h{font-size:12px;color:var(--sub);text-align:center}
+.rgrid .v{text-align:center;padding:8px 4px;border-radius:8px;background:var(--card)}
+.rgrid .v.tot{font-weight:800;color:var(--pri)}
+.rgrid .v.over{color:var(--bad)}
+.rgrid input{text-align:center;font-weight:700}
+.r-info{display:block;margin-top:6px;color:var(--sub);font-size:13px}
+.pick{position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:calc(20px + env(safe-area-inset-top)) 12px 12px}
+.pick-box{background:var(--card);border-radius:16px;width:min(720px,100%);max-height:100%;display:flex;flex-direction:column;padding:12px}
+#pk-list{overflow:auto;margin-top:10px}
+.pk-g{font-size:13px;color:var(--sub);margin:10px 4px 4px;font-weight:700}
+.pk-i{display:block;width:100%;text-align:left;min-height:46px;border:0;border-bottom:1px solid var(--line);background:none;padding:8px 6px;font-size:15px;color:var(--tx)}
+.pk-i small{color:var(--sub)}
+.pk-i.on{background:var(--warn-bg)}
+details.ckbox{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg)}
+details.ckbox summary{font-weight:700;min-height:30px;cursor:pointer}
+.ck{padding:8px 0;border-bottom:1px solid var(--line)}
+.ck-t{font-size:15px;margin-bottom:6px}
+.ck .seg button{padding:8px;font-size:14px}
+.ck .seg button.on.na{background:var(--sub);color:#fff;border-color:var(--sub)}
+.ck-m{margin-top:6px;padding:8px!important;font-size:14px}
+.ckfs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.ckf{min-height:52px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--tx)}
+.ckf small{font-weight:400;color:var(--sub);font-size:12px}
+.ckf.rel{border-color:var(--warn);background:var(--warn-bg)}
+.ckf.on{border-color:var(--pri);background:var(--pri);color:var(--pri-tx)}
+.ckf.on small{color:var(--pri-tx)}
+.ckpanel{border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+.ck-s{font-size:13px;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ckref{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:4px 8px;font-size:12px;color:var(--pri);min-height:30px}
+.ckin{align-items:center;flex-wrap:nowrap}
+.ckin>div{min-width:0}
+.cku{flex:none;font-size:14px;color:var(--sub);min-width:28px}
+.na-btn{flex:none;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--card);font-size:13px;padding:0 10px;color:var(--tx)}
+.na-btn.on{background:var(--sub);color:#fff}
+.ckb{font-size:12px;padding:2px 8px;border-radius:99px;font-weight:700}
+.ckb.ok{background:#e3f4ea;color:var(--ok)}.ckb.ng{background:#fdecea;color:var(--bad)}.ckb.na{background:var(--line);color:var(--sub)}
 .bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:14px}
 .bar i{display:block;height:10px;border-radius:5px;background:var(--pri)}
 .pb{height:12px;background:var(--line);border-radius:6px;overflow:hidden;position:relative}
@@ -244,7 +286,7 @@ async function startLog(id) {
       toast('작성 중이던 일보를 복구했어요');
     }
   }
-  form = { log, isNew: !id, photos, removed: [] };
+  form = { log, isNew: !id, photos, removed: [] }; state.ckFac = ''; state.ckOpen = false;
   state.tab = 'log'; state.sub = 'input';
   render(); window.scrollTo(0, 0);
 }
@@ -254,29 +296,269 @@ function collectLog() {
   if (!$('#f-date')) return;
   l.date = $('#f-date').value || l.date;
   l.weather = g('f-weather'); l.crew = g('f-crew'); l.section = g('f-section');
-  l.progress = g('f-progress'); l.drawingNote = g('f-dnote'); l.special = g('f-special');
-  l.results = [...document.querySelectorAll('.rrow')].map(r => ({ tradeId: r.querySelector('.r-trade').value, inQty: r.querySelector('.r-in').value, setQty: r.querySelector('.r-set').value }));
+  l.progress = g('f-progress'); l.special = g('f-special'); l.important = !!($('#f-imp') || {}).checked;
+  l.results = [...document.querySelectorAll('.rcard')].map(r => ({ tradeId: r.querySelector('.r-trade').value, inQty: r.querySelector('.r-in').value, setQty: r.querySelector('.r-set').value }));
+  ckCollect();
   document.querySelectorAll('.ph').forEach((e, i) => { if (form.photos[i]) { form.photos[i].caption = e.querySelector('.cap').value; form.photos[i].kind = e.querySelector('.kind').value; } });
 }
 function photosHTML() {
   return form.photos.map((p, i) => `<div class="ph"><img src="${p.url}" alt=""><select class="kind"><option value="">구분 선택</option>${KINDS.map(k => `<option ${p.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select><input class="cap" type="text" placeholder="위치·내용 메모" value="${esc(p.caption)}"><button data-rm="${i}">삭제</button></div>`).join('');
 }
+function tradeById(id) { return cache.trades.find(x => x.id === id); }
+function prevQty(tradeId) {
+  const t = tradeById(tradeId) || {}; let i = num(t.prevIn), s = num(t.prevSet);
+  const d = form.log.date, me = form.log.id;
+  for (const l of cache.logs) if (l.id !== me && l.date <= d) for (const r of l.results || []) if (r.tradeId === tradeId) { i += num(r.inQty); s += num(r.setQty); }
+  return { t, i, s };
+}
+function resCardHTML(r, i) {
+  const t = r.tradeId ? tradeById(r.tradeId) : null;
+  return `<div class="rcard" data-ri="${i}"><div class="rtop"><button type="button" class="r-pick ${t ? '' : 'empty'}" data-pick="${i}">${t ? `${t.code ? `<small class="hint">${esc(t.code)}</small><br>` : ''}${esc(t.name)}` : '🔍 공종 검색해서 선택'}</button><input type="hidden" class="r-trade" value="${esc(r.tradeId || '')}"><button type="button" class="r-del" data-rr="${i}" aria-label="삭제">✕</button></div>
+    <div class="rgrid"><span></span><span class="h">반입</span><span class="h">설치</span>
+      <span class="h" style="text-align:left">이전 누계</span><span class="v r-pi">-</span><span class="v r-ps">-</span>
+      <b style="font-size:14px">오늘 실적</b><input class="r-in" type="number" inputmode="decimal" placeholder="0" value="${esc(r.inQty)}"><input class="r-set" type="number" inputmode="decimal" placeholder="0" value="${esc(r.setQty)}">
+      <span class="h" style="text-align:left">누계 (자동)</span><span class="v tot r-ci">-</span><span class="v tot r-cs">-</span></div>
+    <small class="r-info"></small></div>`;
+}
 function resRowsHTML() {
   const rows = form.log.results || [];
-  if (!cache.trades.length) return '<small class="hint">공종마스터가 비어 있어요. 📚 자료 탭에서 공종을 먼저 등록하면 여기서 실적을 입력할 수 있어요.</small>';
-  const opt = (t, sel) => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)}${t.unit ? ' (' + esc(t.unit) + ')' : ''}</option>`;
-  const opts = sel => {
-    const groups = {};
-    cache.trades.forEach(t => { const g = t.code ? t.code.split('_')[0] : ''; (groups[g] = groups[g] || []).push(t); });
-    const keys = Object.keys(groups);
-    if (keys.length === 1 && !keys[0]) return groups[''].map(t => opt(t, sel)).join('');
-    return keys.map(g => `<optgroup label="${esc(g || '기타')}">${groups[g].map(t => opt(t, sel)).join('')}</optgroup>`).join('');
-  };
-  return '<div class="rhead"><span>공종</span><span>반입</span><span>설치</span><span></span></div>' + rows.map((r, i) => `<div class="rrow"><select class="r-trade"><option value="">공종 선택</option>${opts(r.tradeId)}</select><input class="r-in" type="number" inputmode="decimal" placeholder="0" value="${esc(r.inQty)}"><input class="r-set" type="number" inputmode="decimal" placeholder="0" value="${esc(r.setQty)}"><button type="button" data-rr="${i}">✕</button></div>`).join('') + '<button type="button" class="btn ghost sm" id="f-addres" style="margin-top:4px">＋ 공종 실적 추가</button>';
+  if (!cache.trades.length) return '<small class="hint">공종마스터가 비어 있어요. 공정률 → ⚙ 공종마스터 관리에서 엑셀로 공종을 먼저 불러오면 여기서 실적을 입력할 수 있어요.</small>';
+  return rows.map(resCardHTML).join('') + '<button type="button" class="btn ghost sm" id="f-addres" style="margin-top:4px">＋ 공종 실적 추가</button>';
 }
+function updResCalc() {
+  const cards = [...document.querySelectorAll('.rcard')], today = {};
+  cards.forEach(c => { const id = c.querySelector('.r-trade').value; if (!id) return; const o = today[id] || (today[id] = { i: 0, s: 0 }); o.i += num(c.querySelector('.r-in').value); o.s += num(c.querySelector('.r-set').value); });
+  cards.forEach(c => {
+    const id = c.querySelector('.r-trade').value, q = s => c.querySelector(s);
+    if (!id) { ['.r-pi', '.r-ps', '.r-ci', '.r-cs'].forEach(k => q(k).textContent = '-'); q('.r-info').textContent = ''; return; }
+    const p = prevQty(id), t = p.t, ci = p.i + today[id].i, cs = p.s + today[id].s, qty = num(t.qty);
+    q('.r-pi').textContent = fmtN(p.i); q('.r-ps').textContent = fmtN(p.s); q('.r-ci').textContent = fmtN(ci); q('.r-cs').textContent = fmtN(cs);
+    q('.r-ci').classList.toggle('over', qty > 0 && ci > qty); q('.r-cs').classList.toggle('over', qty > 0 && cs > qty);
+    const over = qty > 0 && (ci > qty || cs > qty);
+    q('.r-info').innerHTML = `계약 ${fmtN(qty)} ${esc(t.unit || '')} · 누계 반입 ${qty ? pct(Math.min(1, ci / qty)) : '-'} / 설치 ${qty ? pct(Math.min(1, cs / qty)) : '-'}${over ? ' · <b style="color:var(--bad)">⚠ 계약수량 초과</b>' : ''}${t.unit ? ` · 수량은 「${esc(t.unit)}」 단위로 입력` : ''}`;
+  });
+}
+function tradePicker(cur, cb) {
+  const el = document.createElement('div'); el.className = 'pick';
+  el.innerHTML = `<div class="pick-box"><div class="row" style="flex-wrap:nowrap"><input id="pk-q" type="search" placeholder="공종명·규격·상세ID 검색 (예: 케이블 2.5)" autocomplete="off"><button class="btn ghost" id="pk-x" style="flex:none;min-width:auto">닫기</button></div><div id="pk-list"></div></div>`;
+  document.body.appendChild(el);
+  const recent = []; for (const l of cache.logs.slice(0, 40)) for (const r of l.results || []) if (r.tradeId && !recent.includes(r.tradeId) && tradeById(r.tradeId)) recent.push(r.tradeId);
+  const item = t => `<button class="pk-i ${t.id === cur ? 'on' : ''}" data-tid="${t.id}">${esc(t.name)} <small>${esc(t.unit || '')}${t.code ? ' · ' + esc(t.code) : ''}</small></button>`;
+  const grp = t => t.code ? t.code.split('_')[0] : '기타';
+  const draw = () => {
+    const q = $('#pk-q').value.trim().toLowerCase(), toks = q.split(/\s+/).filter(Boolean);
+    let html = '';
+    if (!toks.length) {
+      if (recent.length) html += `<div class="pk-g">최근 사용</div>` + recent.slice(0, 8).map(id => item(tradeById(id))).join('');
+      const groups = {}; cache.trades.forEach(t => (groups[grp(t)] = groups[grp(t)] || []).push(t));
+      html += Object.entries(groups).map(([g, ts]) => `<div class="pk-g">${esc(g)} (${ts.length})</div>` + ts.map(item).join('')).join('');
+    } else {
+      const hit = cache.trades.filter(t => { const h = [t.name, t.code, t.unit].join(' ').toLowerCase(), hn = h.replace(/\s+/g, ''); return toks.every(k => h.includes(k) || hn.includes(k)); });
+      html = `<div class="pk-g">검색 결과 ${hit.length}개</div>` + (hit.slice(0, 100).map(item).join('') || '<div class="pk-g">맞는 공종이 없어요</div>');
+    }
+    $('#pk-list').innerHTML = html;
+    el.querySelectorAll('[data-tid]').forEach(b => b.onclick = () => { el.remove(); cb(b.dataset.tid); });
+  };
+  $('#pk-q').addEventListener('input', draw); $('#pk-x').onclick = () => el.remove();
+  el.addEventListener('click', e => { if (e.target === el) el.remove(); });
+  draw(); setTimeout(() => $('#pk-q').focus(), 50);
+}
+/* ---------- 주요시설물 시공 체크리스트 (6종) ---------- */
+/* t: min(이상) max(이하·이내) range(범위) eq(정확히) visual(육안·선택) aftable(AF 송신케이블 표) */
+const CK_FAC = [
+  { id: 'sig', name: '신호기', full: '장내·출발·폐색신호기', doc: 'KR S-02020', kw: ['신호기'], ex: ['입환'] },
+  { id: 'shu', name: '입환신호기', full: '입환신호기', doc: 'KR S-02020', kw: ['입환신호기'] },
+  { id: 'bal', name: '발리스', full: '발리스', doc: 'KR S-07040', kw: ['발리스', '선로변제어유니트', '케이블헷드', '케이블헤드'] },
+  { id: 'pm', name: '선로전환기', full: '선로전환기', doc: 'KR S-03020', kw: ['선로전환기', '밀착조절간', '첨단간', '접속간', '깔판'] },
+  { id: 'af', name: 'AF궤도회로', full: 'AF궤도회로', doc: 'KR S-04030', kw: ['AF궤도회로', 'AF 기구함', '튜닝', 'B2-500'] },
+  { id: 'imp', name: '임펄스궤도회로', full: '고전압임펄스궤도회로', doc: 'KR S-04030', kw: ['임펄스'] }
+];
+const CK = [
+  ['sig', 'sig01', '확인거리', '신호기 (차내신호 KTCS-1·ATC 구간)', '200m 이상', 'min', 200, null, 'm', '차내신호'],
+  ['sig', 'sig02', '확인거리', '진로표시기 (차내신호 KTCS-1·ATC 구간)', '100m 이상', 'min', 100, null, 'm', '차내신호'],
+  ['sig', 'sig03', '가공선 이격거리', '', '1,200mm 이상', 'min', 1200, null, 'mm', ''],
+  ['sig', 'sig04', '레일상면↔최하위 렌즈 설치높이', '자립형', '1,500mm 이상', 'min', 1500, null, 'mm', ''],
+  ['sig', 'sig05', '레일상면↔최하위 렌즈 설치높이', '벽형', '3,200mm 이상 (시공상세도 기준)', 'min', 3200, null, 'mm', ''],
+  ['sig', 'sig06', '레일상면↔신호기 상면 설치높이', '역방향 자립형 신호기', '1,660mm 이상 (장내 역방향표지 포함)', 'min', 1660, null, 'mm', ''],
+  ['sig', 'sig07', '건축한계 (EC용 선)', '레일중심', '1,800mm 이상', 'min', 1800, null, 'mm', '건축한계'],
+  ['sig', 'sig08', '건축한계 (EC용 선)', '레일 내측↔신호기 중심', '1,530mm 이상 (시공상세도 기준)', 'min', 1530, null, 'mm', '건축한계'],
+  ['sig', 'sig09', '건축한계 (EC용 선)', '레일 내측↔진로표시기 측면', '1,054mm 이상 (시공상세도 기준)', 'min', 1054, null, 'mm', '건축한계'],
+  ['sig', 'sig10', '설치위치 (대향)', '첨단레일 선단↔신호기', '100m 이상', 'min', 100, null, 'm', '대향'],
+  ['sig', 'sig11', '설치위치 (배향)', '차량접촉한계표지↔신호기', '60m 이상', 'min', 60, null, 'm', '배향'],
+  ['sig', 'sig12', '출발신호기 설치위치 (대향)', '첨단레일 선단의 앞', '위치 확인', 'visual', null, null, '', '대향'],
+  ['sig', 'sig13', '출발신호기 설치위치 (배향)', 'KTCS-1 및 ATS/KTCS-1 혼용구간', '차량접촉한계표지 안쪽 33m 이상', 'min', 33, null, 'm', '33m'],
+  ['sig', 'sig14', '전차선 절연구간↔신호기 거리', '', '열차 최장길이 + 50m 이상', 'visual', null, null, '', '절연구분'],
+  ['sig', 'sig15', '절연↔신호기 거리', '역구내 · 신호기 안쪽', '6m 이내', 'max', null, 6, 'm', '절연'],
+  ['sig', 'sig16', '절연↔신호기 거리', '역구내 · 신호기 바깥쪽', '2m 이내', 'max', null, 2, 'm', '절연'],
+  ['sig', 'sig17', '절연↔신호기 거리', '역간 · 신호기 안쪽', '12m 이내', 'max', null, 12, 'm', '절연'],
+  ['sig', 'sig18', '절연↔신호기 거리', '역간 · 신호기 바깥쪽', '2m 이내', 'max', null, 2, 'm', '절연'],
+  ['sig', 'sig19', 'AF 튜닝유니트↔신호기 거리', 'TU 간 거리 20m', '튜닝유니트에서 5m 지점', 'eq', 5, 5, 'm', '튜닝유니트'],
+  ['shu', 'shu01', '확인거리', '', '200m 이상', 'min', 200, null, 'm', '확인거리'],
+  ['shu', 'shu02', '레일상면↔최하위 렌즈 설치높이', '단등형', '725mm 이상', 'min', 725, null, 'mm', '단등형'],
+  ['shu', 'shu03', '레일상면↔최하위 렌즈 설치높이', '다등형', '1,000mm 이상 (입환표지 700mm)', 'min', 1000, null, 'mm', '입환신호기'],
+  ['shu', 'shu04', '건축한계 (EC용 선)', '일반', '1,800mm 이상', 'min', 1800, null, 'mm', '건축한계'],
+  ['shu', 'shu05', '건축한계 (EC용 선)', '레일상면↔신호기 높이 1,150mm 이하인 경우', '1,650mm 이상', 'min', 1650, null, 'mm', '건축한계'],
+  ['shu', 'shu06', '설치위치 (대향)', '첨단레일 선단↔입환신호기', '12m 이상', 'min', 12, null, 'm', '12m'],
+  ['shu', 'shu07', '설치위치 (배향)', '차량접촉한계표지 안쪽', '위치 확인', 'visual', null, null, '', '차량접촉한계표지'],
+  ['shu', 'shu08', '절연↔신호기 거리', '신호기 안쪽', '6m 이내', 'max', null, 6, 'm', '절연'],
+  ['shu', 'shu09', '절연↔신호기 거리', '신호기 바깥쪽', '2m 이내', 'max', null, 2, 'm', '절연'],
+  ['bal', 'bal01', '장내신호기용 인필발리스', '구내폐색신호기 있음', '장내신호기 절연에서 300m 이내', 'max', null, 300, 'm', '인필발리스'],
+  ['bal', 'bal02', '장내신호기용 인필발리스', '구내폐색신호기 없음', '폐색신호기 1호주 내방 50m 이내', 'max', null, 50, 'm', '인필발리스'],
+  ['bal', 'bal03', '역방향 장내신호기용 인필발리스', '역방향 운전설비 있음', '궤도절연에서 1,200m 이내', 'max', null, 1200, 'm', '역방향'],
+  ['bal', 'bal04', '발리스 중심↔레일이음매부 중심', '', '1m 이상', 'min', 1, null, 'm', '레일이음매'],
+  ['bal', 'bal05', '발리스 그룹 내 발리스 간 간격', '', '3m 이상 12m 이하', 'range', 3, 12, 'm', '발리스 그룹'],
+  ['bal', 'bal06', '가변발리스↔궤도절연', '', '17m 이상', 'min', 17, null, 'm', '17m'],
+  ['bal', 'bal07', '고정발리스↔가변발리스', '신호기 방향', '3m 이상', 'min', 3, null, 'm', '고정발리스'],
+  ['bal', 'bal08', 'TU↔가변발리스', '무절연 AF궤도회로 구간 · TU 전방', '13.8m', 'eq', 13.8, 13.8, 'm', '13.8'],
+  ['bal', 'bal09', '가변발리스↔차량접촉한계표지', '신호기↔차량접촉한계표지 33m 미만인 경우', '50m 이상', 'min', 50, null, 'm', '차량접촉한계표지'],
+  ['bal', 'bal10', '발리스↔LEU 케이블 접속', '', '케이블헤드로 접속', 'visual', null, null, '', '케이블헤드'],
+  ['bal', 'bal11', '케이블헤드↔LEU 배선 상태', '', '접속점 없음', 'visual', null, null, '', '케이블헤드'],
+  ['bal', 'bal12', '금속물체와 이격거리', '가로', '410mm 이상', 'min', 410, null, 'mm', '금속물체'],
+  ['bal', 'bal13', '금속물체와 이격거리', '세로', '315mm 이상', 'min', 315, null, 'mm', '금속물체'],
+  ['bal', 'bal14', '금속물체와 이격거리', '아래·위', '210mm 이상', 'min', 210, null, 'mm', '금속물체'],
+  ['bal', 'bal15', '발리스 설치 높이', '레일 상부 높이 아래', '93~193mm', 'range', 93, 193, 'mm', '설치높이'],
+  ['pm', 'pm01', '전철기 동정', '50kg 레일', '130~185mm', 'range', 130, 185, 'mm', '동정'],
+  ['pm', 'pm02', '전철기 동정', '60kg 레일', '130~240mm', 'range', 130, 240, 'mm', '동정'],
+  ['pm', 'pm03', '쇄정간 위치', '대향 좌측', '주쇄정간 아래쪽', 'visual', null, null, '', '쇄정간'],
+  ['pm', 'pm04', '쇄정간 위치', '대향 우측', '주쇄정간 위쪽', 'visual', null, null, '', '쇄정간'],
+  ['pm', 'pm05', '밀착검지기 센서↔텅레일 거리', '60kg 탄성분기기', '6~7mm', 'range', 6, 7, 'mm', '밀착'],
+  ['pm', 'pm06', '레일 내측↔선로전환기 중심', '일반 (도시철도 지하 1,100mm, 침수방지용 1,545mm 표준)', '1,200mm 이상', 'min', 1200, null, 'mm', '선로전환기 중심'],
+  ['pm', 'pm07', '쇄정 조정', '좌·우 합', '4mm 이하', 'max', null, 4, 'mm', '쇄정'],
+  ['af', 'af01', '튜닝유니트 타입', '무절연 구간', '일반용', 'visual', null, null, '', '튜닝유니트'],
+  ['af', 'af02', '튜닝유니트 타입', '유절연·종단부', '종단형', 'visual', null, null, '', '튜닝유니트'],
+  ['af', 'af03', '궤도회로 길이별 송신케이블 길이', '궤도길이 50~1,000m', '50~300m: 950m / 300~600m: 480m / 600~800m: 220m / 800~900m: 120m / 900~1,000m: 30m 이하', 'aftable', null, null, 'm', '튜닝유니트'],
+  ['af', 'af04', '동조구역 길이', '역간', '10m 이내', 'max', null, 10, 'm', '동조'],
+  ['af', 'af05', '동조구역 길이', '역구내', '2m 이하', 'max', null, 2, 'm', '동조'],
+  ['af', 'af06', '사구간 길이', '', '7m 이하', 'max', null, 7, 'm', '사구간'],
+  ['af', 'af07', '사구간 이격거리', '사구간 1,210mm 이상 · 사구간 상호 또는 다른 궤도회로', '15m 이상', 'min', 15, null, 'm', '1,210'],
+  ['af', 'af08', '사구간 이격거리', '역구내', '3m 이하', 'max', null, 3, 'm', '사구간'],
+  ['af', 'af09', '송·착 위치', '송전', '열차 진출 측', 'visual', null, null, '', '송전'],
+  ['af', 'af10', '송·착 위치', '착전', '열차 진입 측', 'visual', null, null, '', '착전'],
+  ['af', 'af11', '임피던스본드(B2) 설치 간격', '', '1,200~1,500m', 'range', 1200, 1500, 'm', '임피던스본드'],
+  ['af', 'af12', '임피던스본드(B2)↔튜닝유니트 이격', '역간·역구내 개소 제외', '100m 이상', 'min', 100, null, 'm', '임피던스본드'],
+  ['af', 'af13', '송·착 케이블', 'MLFC 사용 여부', 'MLFC 50㎟', 'visual', null, null, '', 'MLFC'],
+  ['af', 'af14', '케이블 쉴드 접지', '', '육안 검사', 'visual', null, null, '', ''],
+  ['af', 'af15', '튜닝유니트 수신측 단락감도', '', '0.1~1.7Ω', 'range', 0.1, 1.7, 'Ω', '단락감도'],
+  ['imp', 'imp01', '송·착 케이블', 'MLFC 사용 여부', 'MLFC 80㎟ 또는 100㎟', 'visual', null, null, '', 'MLFC'],
+  ['imp', 'imp02', '송·착 위치', '송전', '열차 진출 측', 'visual', null, null, '', '송전'],
+  ['imp', 'imp03', '송·착 위치', '착전', '열차 진입 측', 'visual', null, null, '', '착전'],
+  ['imp', 'imp04', '궤도회로 길이', '', '1,000m 이내', 'max', null, 1000, 'm', '최대연장'],
+  ['imp', 'imp05', '인접 궤도 극성관계', '', '이극', 'visual', null, null, '', '이극'],
+  ['imp', 'imp06', '유절연↔무절연 경계구간 임피던스본드', '', '430A용', 'visual', null, null, '', '430'],
+  ['imp', 'imp07', '사구간 길이', '', '7m 이하', 'max', null, 7, 'm', '사구간'],
+  ['imp', 'imp08', '사구간 이격거리', '사구간 1,210mm 이상 · 사구간 상호 또는 다른 궤도회로', '15m 이상', 'min', 15, null, 'm', '1,210'],
+  ['imp', 'imp09', '사구간 이격거리', '역구내', '3m 이하', 'max', null, 3, 'm', '사구간'],
+  ['imp', 'imp10', '궤도회로 구성', '', '직렬법 (분기부는 병렬법, 병렬부분 50m 이내)', 'visual', null, null, '', '병렬부분'],
+  ['imp', 'imp11', '정·부 펄스비', '', '3:1 이상 (3 이상 입력)', 'min', 3, null, ': 1', '3:1'],
+  ['imp', 'imp12', '펄스 수', '분당', '180펄스 ±5% (171~189)', 'range', 171, 189, '펄스/분', '180']
+].map(([fac, id, item, cond, std, t, lo, hi, unit, kw]) => ({ fac, id, item, cond, std, t, lo, hi, unit, kw }));
+const AF_TABLE = [[50, 300, 950], [300, 600, 480], [600, 800, 220], [800, 900, 120], [900, 1000, 30]];
+const ckFacOf = id => CK_FAC.find(f => f.id === id);
+function ckJudge(it, c) {
+  if (!c) return '';
+  if (c.r === 'na') return 'na';
+  if (it.t === 'visual') return c.r || '';
+  const v = c.v === '' || c.v == null ? NaN : Number(c.v);
+  if (it.t === 'aftable') {
+    const L = Number(c.v), cab = Number(c.v2);
+    if (!c.v || !c.v2 || isNaN(L) || isNaN(cab)) return '';
+    const row = AF_TABLE.find(([a, b]) => L >= a && L <= b);
+    return row ? (cab <= row[2] ? 'ok' : 'ng') : 'ng';
+  }
+  if (isNaN(v)) return '';
+  if (it.t === 'min') return v >= it.lo ? 'ok' : 'ng';
+  if (it.t === 'max') return v <= it.hi ? 'ok' : 'ng';
+  if (it.t === 'range') return v >= it.lo && v <= it.hi ? 'ok' : 'ng';
+  if (it.t === 'eq') return Math.abs(v - it.lo) < 1e-9 ? 'ok' : 'ng';
+  return '';
+}
+function relatedFacs(results) {
+  const set = new Set();
+  for (const r of results || []) {
+    const t = tradeById(r.tradeId); if (!t) continue;
+    for (const f of CK_FAC) if (f.kw.some(k => t.name.includes(k)) && !(f.ex || []).some(k => t.name.includes(k))) set.add(f.id);
+  }
+  return [...set];
+}
+function ckCounts(l, fac) {
+  const ck = l.ck || {}; let ok = 0, ng = 0, na = 0;
+  for (const it of CK) { if (fac && it.fac !== fac) continue; const r = ck[it.id] && ck[it.id].r; if (r === 'ok') ok++; else if (r === 'ng') ng++; else if (r === 'na') na++; }
+  return { ok, ng, na, done: ok + ng + na };
+}
+function checksHTML() {
+  const l = form.log; l.ck = l.ck || {}; l.ckT = l.ckT || {};
+  const rel = relatedFacs(l.results), all = ckCounts(l), cur = state.ckFac;
+  const chip = f => { const n = ckCounts(l, f.id), tot = CK.filter(i => i.fac === f.id).length; return `<button type="button" class="ckf ${cur === f.id ? 'on' : ''} ${rel.includes(f.id) ? 'rel' : ''}" data-ckf="${f.id}">${rel.includes(f.id) ? '📍 ' : ''}${esc(f.name)}<small>${n.done}/${tot}${n.ng ? ` · ✖${n.ng}` : ''}</small></button>`; };
+  let panel = '';
+  if (cur) {
+    const f = ckFacOf(cur);
+    panel = `<div class="ckpanel"><div class="row" style="align-items:flex-end"><div><label style="margin-top:0">대상 (시설물 번호·STA)</label><input class="ck-tg" type="text" placeholder="예: 장내 2호 / STA 1+250" value="${esc(l.ckT[cur] || '')}"></div><button type="button" class="btn ghost sm" data-ckref="${cur}|" style="flex:none;min-width:auto">📘 ${esc(f.doc)} 열기</button></div>
+      ${CK.filter(i => i.fac === cur).map(it => {
+        const c = l.ck[it.id] || {}, r = ckJudge(it, c);
+        const badge = r === 'ok' ? '<span class="ckb ok">✔ 적합</span>' : r === 'ng' ? '<span class="ckb ng">✖ 미흡</span>' : r === 'na' ? '<span class="ckb na">해당없음</span>' : '';
+        const input = it.t === 'visual' ? `<div class="seg"><button type="button" data-ckv="${it.id}:ok" class="ok ${c.r === 'ok' ? 'on' : ''}">✔ 적합</button><button type="button" data-ckv="${it.id}:ng" class="diff ${c.r === 'ng' ? 'on' : ''}">✖ 미흡</button><button type="button" data-ckv="${it.id}:na" class="na ${c.r === 'na' ? 'on' : ''}">— 해당없음</button></div>`
+          : it.t === 'aftable' ? `<div class="row ckin"><div><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="궤도길이" value="${esc(c.v ?? '')}"><small class="hint">궤도길이 (m)</small></div><div><input class="ck-v2" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="송신케이블" value="${esc(c.v2 ?? '')}"><small class="hint">송신케이블 (m)</small></div><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`
+          : `<div class="row ckin"><div style="flex:2"><input class="ck-v" data-ckid="${it.id}" type="number" inputmode="decimal" placeholder="측정값" value="${esc(c.v ?? '')}"></div><span class="cku">${esc(it.unit)}</span><button type="button" class="na-btn ${c.r === 'na' ? 'on' : ''}" data-ckv="${it.id}:na">해당없음</button></div>`;
+        return `<div class="ck" data-ckrow="${it.id}"><div class="ck-t"><b>${esc(it.item)}</b>${it.cond ? ` <small class="hint">· ${esc(it.cond)}</small>` : ''} <span class="ckbadge">${badge}</span></div>
+          <div class="ck-s">기준: ${esc(it.std)} ${it.kw ? `<button type="button" class="ckref" data-ckref="${cur}|${esc(it.kw)}">📘 근거</button>` : ''}</div>${input}
+          <input class="ck-m" data-ckid="${it.id}" type="text" placeholder="메모 (위치·미흡 내용·조치)" value="${esc(c.m || '')}"></div>`;
+      }).join('')}</div>`;
+  }
+  return `<details class="ckbox" ${all.done || cur || state.ckOpen || rel.length ? "open" : ""}><summary>주요시설물 시공 체크리스트 <small class="hint">(확인 ${all.done}${all.ng ? ` · <b style="color:var(--bad)">미흡 ${all.ng}</b>` : ''})</small></summary>
+    <small class="hint">${rel.length ? '📍 표시는 오늘 실적 공종과 관련된 시설물이에요. ' : ''}숫자를 넣으면 기준과 비교해 적합·미흡이 자동으로 표시돼요. 참고용 자체 점검이에요.</small>
+    <div class="ckfs">${CK_FAC.map(chip).join('')}</div>${panel}</details>`;
+}
+function ckCollect() {
+  const l = form.log; if (!l) return; l.ck = l.ck || {}; l.ckT = l.ckT || {};
+  const g = id => (l.ck[id] = l.ck[id] || {});
+  document.querySelectorAll('.ck-v').forEach(e => { g(e.dataset.ckid).v = e.value; });
+  document.querySelectorAll('.ck-v2').forEach(e => { g(e.dataset.ckid).v2 = e.value; });
+  document.querySelectorAll('.ck-m').forEach(e => { g(e.dataset.ckid).m = e.value.trim(); });
+  const tg = $('.ck-tg'); if (tg && state.ckFac) l.ckT[state.ckFac] = tg.value.trim();
+  for (const it of CK) { const c = l.ck[it.id]; if (!c) continue; if (it.t !== 'visual' && c.r !== 'na') c.r = ckJudge(it, Object.assign({}, c, { r: '' })); }
+}
+function ckClean(l) {
+  const ck = {}; for (const [k, c] of Object.entries(l.ck || {})) if (c && (c.r || c.m || (c.v !== '' && c.v != null) || (c.v2 !== '' && c.v2 != null))) ck[k] = c;
+  l.ck = ck; const t = {}; for (const [k, v] of Object.entries(l.ckT || {})) if (v) t[k] = v; l.ckT = t;
+}
+function ckRefOpen(fac, kw) {
+  const f = ckFacOf(fac), h = cache.hbs.find(x => x.no === f.doc);
+  if (!h) return toast(`편람 ${f.doc}이(가) 앱에 없어요. 편람 화면에서 먼저 불러와 주세요`);
+  if (!kw) return hbOpen(h.id, 1);
+  dbAll('hbtext').then(rows => {
+    const k = kw.replace(/\s+/g, ''), ps = rows.filter(x => x.fileId === h.fileId && x.t.replace(/\s+/g, '').includes(k)).map(x => x.page).sort((a, b) => a - b);
+    const p = ps.find(p => p > 5) || ps[0] || 1;
+    hbOpen(h.id, p); toast(ps.length ? `${p}쪽에서 「${kw}」을(를) 찾아보세요` : `「${kw}」을(를) 찾지 못해 첫 쪽을 열었어요`);
+  });
+}
+function bindChecks() {
+  const redraw = () => { state.ckOpen = true; $('#chk').innerHTML = checksHTML(); bindChecks(); saveDraft(); };
+  document.querySelectorAll('[data-ckf]').forEach(b => b.onclick = () => { collectLog(); state.ckFac = state.ckFac === b.dataset.ckf ? '' : b.dataset.ckf; redraw(); });
+  document.querySelectorAll('[data-ckv]').forEach(b => b.onclick = () => { collectLog(); const [id, r] = b.dataset.ckv.split(':'), c = (form.log.ck[id] = form.log.ck[id] || {}); c.r = c.r === r ? '' : r; if (!c.r) { const it = CK.find(i => i.id === id); if (it.t !== 'visual') c.r = ckJudge(it, c); } redraw(); });
+  document.querySelectorAll('[data-ckref]').forEach(b => b.onclick = () => { collectLog(); const [fac, kw] = b.dataset.ckref.split('|'); ckRefOpen(fac, kw); });
+  document.querySelectorAll('.ck-v,.ck-v2').forEach(e => e.addEventListener('input', () => {
+    const l = form.log, id = e.dataset.ckid, it = CK.find(i => i.id === id), c = (l.ck[id] = l.ck[id] || {});
+    if (e.classList.contains('ck-v')) c.v = e.value; else c.v2 = e.value;
+    if (c.r !== 'na') c.r = ckJudge(it, Object.assign({}, c, { r: '' }));
+    const r = c.r, row = document.querySelector(`[data-ckrow="${id}"] .ckbadge`);
+    if (row) row.innerHTML = r === 'ok' ? '<span class="ckb ok">✔ 적합</span>' : r === 'ng' ? '<span class="ckb ng">✖ 미흡</span>' : r === 'na' ? '<span class="ckb na">해당없음</span>' : '';
+    const n = ckCounts(l), sm = document.querySelector('details.ckbox summary small'); if (sm) sm.innerHTML = `(확인 ${n.done}${n.ng ? ` · <b style="color:var(--bad)">미흡 ${n.ng}</b>` : ''})`;
+  }));
+}
+function ckSummaryText(l, onlyNg) {
+  const out = [];
+  for (const f of CK_FAC) {
+    const its = CK.filter(i => i.fac === f.id && l.ck && l.ck[i.id] && (onlyNg ? l.ck[i.id].r === 'ng' : l.ck[i.id].r));
+    if (!its.length) continue;
+    out.push(`[${f.name}${l.ckT && l.ckT[f.id] ? ' ' + l.ckT[f.id] : ''}] ` + its.map(i => { const c = l.ck[i.id]; return `${i.item}${i.cond ? '(' + i.cond + ')' : ''}:${{ ok: '적합', ng: '미흡', na: '해당없음' }[c.r]}${c.v !== '' && c.v != null ? ' ' + c.v + (i.t === 'aftable' ? 'm/' + c.v2 + 'm' : i.unit) : ''}${c.m ? ' - ' + c.m : ''}`; }).join(', '));
+  }
+  return out.join(' / ');
+}
+
 function logFormHTML() {
   const l = form.log;
   if (form.isNew && cache.trades.length && !(l.results || []).length) l.results = [{ tradeId: '', inQty: '', setQty: '' }];
+  l.ck = l.ck || {}; l.ckT = l.ckT || {};
   return `
   <h2>${form.isNew ? '오늘 작업일보' : '일보 수정'}</h2>
   <div class="card">
@@ -289,13 +571,11 @@ function logFormHTML() {
     <label>작업내용</label><textarea id="f-progress" placeholder="예: 신호케이블 포설, 전철주 기초 타설">${esc(l.progress)}</textarea>
     <label>실적상세 (오늘 반입·설치 수량)</label>
     <div id="res">${resRowsHTML()}</div>
-    <label>도면과 비교</label>
-    <div class="seg">
-      <button type="button" data-dw="ok" class="ok ${l.drawing === 'ok' ? 'on' : ''}">✔ 도면과 일치</button>
-      <button type="button" data-dw="diff" class="diff ${l.drawing === 'diff' ? 'on' : ''}">⚠ 차이 있음</button>
-    </div>
-    <input id="f-dnote" type="text" style="margin-top:8px" placeholder="도면 번호 / 차이 내용 (도면 파일은 넣지 않아요)" value="${esc(l.drawingNote)}">
+    <label>시공 체크리스트</label>
+    <div id="chk">${checksHTML()}</div>
     <label>특이사항 · 히스토리</label><textarea id="f-special" placeholder="지시사항, 민원, 사고·아차사고, 설계변경, 협의 내용 등">${esc(l.special)}</textarea>
+    <label class="chk" style="margin-top:8px"><input id="f-imp" type="checkbox" ${l.important ? 'checked' : ''}> ⭐ 중요 표시 (따로 보고하거나 나중에 찾아야 할 내용)</label>
+    ${l.drawingNote || l.drawing ? `<small class="hint">이전 도면 비교 기록: ${l.drawing === 'ok' ? '일치' : l.drawing === 'diff' ? '차이 있음' : ''} ${esc(l.drawingNote || '')}</small>` : ''}
     <label>작업사진</label>
     <label class="btn ghost block" style="margin:0">📷 사진 촬영 / 선택<input id="f-file" type="file" accept="image/*" multiple style="display:none"></label>
     <div id="photos" class="photos">${photosHTML()}</div>
@@ -311,7 +591,8 @@ async function saveLog() {
   const l = form.log;
   l.results = (l.results || []).filter(r => r.tradeId || r.inQty || r.setQty);
   if (l.results.some(r => !r.tradeId)) return toast('수량을 입력한 줄은 공종을 선택해 주세요');
-  if (!l.progress && !l.special && !l.drawingNote && !l.results.length && !form.photos.length) return toast('내용을 입력해 주세요');
+  ckClean(l);
+  if (!l.progress && !l.special && !l.drawingNote && !l.results.length && !form.photos.length && !Object.keys(l.ck).length) return toast('내용을 입력해 주세요');
   try {
     l.photoIds = form.photos.map(p => p.id);
     for (const p of form.photos) await dbPut('photos', { id: p.id, blob: p.blob, caption: p.caption, kind: p.kind, logId: l.id });
@@ -331,17 +612,26 @@ async function deleteLog() {
 
 /* ---------- 일보 목록 ---------- */
 function listHTML() {
-  const q = state.q.toLowerCase();
-  const rows = cache.logs.filter(l => !q || [l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' ')].join(' ').toLowerCase().includes(q));
+  const q = state.q.toLowerCase(), toks = q.split(/\s+/).filter(Boolean);
+  const rows = cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l) + ' ' + Object.values(l.ckT || {}).join(' ')].join(' ').toLowerCase())));
+  const nImp = cache.logs.filter(l => l.important).length;
   return `<h2>일보 목록 <small class="hint">(${rows.length}건)</small></h2>
-  <input id="q" type="search" placeholder="공종, 구간, 특이사항 검색" value="${esc(state.q)}" style="margin-bottom:12px">
+  <input id="q" type="search" placeholder="공종, 구간, 특이사항, 체크리스트 메모 검색" value="${esc(state.q)}" style="margin-bottom:10px">
+  <div class="row" style="margin-bottom:12px;align-items:flex-end">
+    <div><label style="margin-top:0">시작일</label><input id="l-from" type="date" value="${esc(state.lFrom || '')}"></div>
+    <div><label style="margin-top:0">종료일</label><input id="l-to" type="date" value="${esc(state.lTo || '')}"></div>
+    <label class="chk" style="margin:0 0 10px"><input id="l-imp" type="checkbox" ${state.impOnly ? 'checked' : ''}> ⭐ 중요만 (${nImp})</label>
+  </div>
+  ${state.impOnly || state.lFrom || state.lTo || toks.length ? `<div class="btns" style="margin:0 0 12px">${rows.length ? '<button class="btn ghost sm" id="l-csv">📊 이 목록만 엑셀(CSV)로 내보내기</button>' : ''}<button class="btn ghost sm" id="l-clear">필터 지우기</button></div>` : ''}
   ${rows.map(l => {
     const names = [...new Set((l.results || []).map(r => tradeName(r.tradeId)))].join(', ') || l.trade || '(공종 없음)';
-    return `<div class="card item" data-open="${l.id}">
-    <div class="t">${fmtDate(l.date)} · ${esc(names)} ${l.section ? '· ' + esc(l.section) : ''}</div>
-    <div class="m">${esc((l.progress || '').slice(0, 80))}</div>
-    <div style="margin-top:6px">${l.crew ? `<span class="tag">👷 ${esc(l.crew)}명</span>` : ''}${l.drawing === 'ok' ? '<span class="tag ok">도면 일치</span>' : ''}${l.drawing === 'diff' ? '<span class="tag bad">도면 차이</span>' : ''}${l.special ? '<span class="tag">특이사항</span>' : ''}${(l.photoIds || []).length ? `<span class="tag">📷 ${l.photoIds.length}</span>` : ''}${l.archived ? `<span class="tag">📦 사진 ${l.archived}장 백업됨</span>` : ''}</div>
-  </div>`; }).join('') || '<div class="card"><small class="hint">아직 일보가 없어요. 입력 탭에서 첫 일보를 남겨 보세요.</small></div>'}`;
+    const cc = ckCounts(l), ok = cc.ok, ng = cc.ng;
+    return `<div class="card item" data-open="${l.id}" ${l.important ? 'style="border-color:var(--warn)"' : ''}>
+    <div class="t">${l.important ? '⭐ ' : ''}${fmtDate(l.date)} <small class="hint">${esc(l.date.slice(0, 4))}</small> · ${esc(names)} ${l.section ? '· ' + esc(l.section) : ''}</div>
+    ${l.progress ? `<div class="m">${esc(l.progress.slice(0, 80))}</div>` : ''}
+    ${l.special ? `<div class="m" style="color:var(--tx)">📌 ${esc(l.special.slice(0, 120))}</div>` : ''}
+    <div style="margin-top:6px">${l.crew ? `<span class="tag">👷 ${esc(l.crew)}명</span>` : ''}${ok || ng ? `<span class="tag ${ng ? 'bad' : 'ok'}">체크 ✔${ok}${ng ? ' ✖' + ng : ''}</span>` : ''}${ng ? `<div class="m" style="color:var(--bad)">✖ ${esc(ckSummaryText(l, true).slice(0, 120))}</div>` : ''}${l.drawing === 'diff' ? '<span class="tag bad">도면 차이</span>' : ''}${(l.photoIds || []).length ? `<span class="tag">📷 ${l.photoIds.length}</span>` : ''}${l.archived ? `<span class="tag">📦 사진 ${l.archived}장 백업됨</span>` : ''}</div>
+  </div>`; }).join('') || '<div class="card"><small class="hint">해당하는 일보가 없어요.</small></div>'}`;
 }
 function logTabHTML() {
   return `<div class="seg" style="margin-bottom:12px"><button data-sub="input" class="${state.sub === 'input' ? 'on pri' : ''}">입력</button><button data-sub="list" class="${state.sub === 'list' ? 'on pri' : ''}">목록 (${cache.logs.length})</button></div>` + (state.sub === 'list' ? listHTML() : logFormHTML());
@@ -631,15 +921,20 @@ async function importJSON(file) {
     await reload(); toast('복원했어요 ✔'); render();
   } catch (e) { toast('복원 실패: ' + e.message); }
 }
-function exportLogCSV() {
-  const rows = [['날짜', '날씨', '투입인원', '구간', '상세ID', '공종', '단위', '반입', '설치', '작업내용', '도면비교', '도면메모', '특이사항', '사진수']];
-  for (const l of cache.logs.slice().reverse()) {
-    const base = [l.date, l.weather, l.crew, l.section];
-    const tail = [l.progress, l.drawing === 'ok' ? '일치' : l.drawing === 'diff' ? '차이있음' : '', l.drawingNote, l.special, (l.photoIds || []).length + (l.archived || 0)];
+function logFiltered() {
+  const q = (state.q || '').toLowerCase(), toks = q.split(/\s+/).filter(Boolean);
+  return cache.logs.filter(l => (!state.impOnly || l.important) && (!state.lFrom || l.date >= state.lFrom) && (!state.lTo || l.date <= state.lTo) && (!toks.length || (h => toks.every(k => h.includes(k)))([l.date, l.trade, l.section, l.progress, l.drawingNote, l.special, (l.results || []).map(r => tradeName(r.tradeId)).join(' '), ckSummaryText(l) + ' ' + Object.values(l.ckT || {}).join(' ')].join(' ').toLowerCase())));
+}
+function exportLogCSV(filtered) {
+  const rows = [['날짜', '중요', '날씨', '투입인원', '구간', '상세ID', '공종', '단위', '오늘 반입', '오늘 설치', '작업내용', '특이사항', '체크리스트(미흡)', '체크리스트(전체)', '사진수']];
+  const src = filtered === true ? logFiltered() : cache.logs;
+  for (const l of src.slice().reverse()) {
+    const base = [l.date, l.important ? '★' : '', l.weather, l.crew, l.section];
+    const tail = [l.progress, l.special, ckSummaryText(l, true), ckSummaryText(l), (l.photoIds || []).length + (l.archived || 0)];
     if ((l.results || []).length) l.results.forEach(r => { const t = cache.trades.find(x => x.id === r.tradeId) || {}; rows.push([...base, t.code || '', tradeName(r.tradeId), t.unit || '', r.inQty, r.setQty, ...tail]); });
     else rows.push([...base, '', l.trade || '', '', '', '', ...tail]);
   }
-  dl(`작업일보_${today()}.csv`, csvBlob(rows));
+  dl(`작업일보_${filtered === true ? '선택_' : ''}${today()}.csv`, csvBlob(rows));
 }
 function exportProgCSV() {
   const rows = [['상세ID', '공종', '단위', '계약수량', '전체가중치(%)', '반입누계', '설치누계', '반입률', '설치률', '실행공종률', '계획공종률', '최근실적일']];
@@ -842,7 +1137,7 @@ let draftT = null;
 async function saveDraft() {
   if (!db || !form || !form.isNew) return;
   const l = form.log;
-  const empty = !l.progress && !l.special && !l.drawingNote && !l.crew && !l.section && !(l.results || []).some(r => r.tradeId || r.inQty || r.setQty) && !form.photos.length;
+  const empty = !l.progress && !l.special && !l.drawingNote && !l.crew && !l.section && !(l.results || []).some(r => r.tradeId || r.inQty || r.setQty) && !form.photos.length && !Object.keys(l.ck || {}).length && !l.important;
   try {
     if (empty) await dbDel('meta', 'draft');
     else await dbPut('meta', { k: 'draft', log: l, photos: form.photos.map(p => ({ id: p.id, blob: p.blob, caption: p.caption, kind: p.kind })) });
@@ -1162,7 +1457,7 @@ window.addEventListener('resize', () => { if (dv && dv.bw) { const z = dv.z; dv.
 
 /* ---------- 편람 (저장 · 검색 · 개정 관리) ---------- */
 const HB_SITE = 'https://www.kric.go.kr/jsp/board/portal/sub02/bui/railBuildList.jsp?q_type=KR003&q_bulid=1009';
-const HB_RE = /(KR\s*[A-Z]\s*-\s*\d{5})\s*([^()\n]*?)\s*\((\d{6})\s*,\s*rev\.?\s*(\d+)\s*\)/ig;
+const HB_RE = /(KR\s*[A-Z]\s*-\s*\d{5})\s*([^\n]*?)\s*\((\d{6})\s*,\s*rev\.?\s*(\d+)\s*\)/ig;
 const normNo = s => s.replace(/[\s_]/g, '').toUpperCase().replace(/^KR([A-Z])/, 'KR $1');
 const yymmdd = s => `20${s.slice(0, 2)}-${s.slice(2, 4)}-${s.slice(4, 6)}`;
 function parseHbName(name) {
@@ -1376,7 +1671,7 @@ function bindHb(on) {
 
 
 /* ---------- 앱 점검 (5단계) ---------- */
-const APP_VER = '1.0.1 (2026-11-23)';
+const APP_VER = '1.2.1 (2026-11-23)';
 async function selfCheck() {
   const out = [], add = (ok, name, msg) => out.push({ ok, name, msg });
   const box = $('#sc-out'); if (box) box.innerHTML = '<small class="hint">점검 중…</small>';
@@ -1429,7 +1724,7 @@ function bind() {
     document.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { collectLog(); state.sub = b.dataset.sub; if (state.sub === 'input' && !form) return startLog(); render(); });
     if (state.sub === 'input' && form) {
       on('f-save', saveLog); on('f-new', () => startLog()); on('f-del', deleteLog);
-      document.querySelectorAll('[data-dw]').forEach(b => b.onclick = () => { collectLog(); form.log.drawing = form.log.drawing === b.dataset.dw ? '' : b.dataset.dw; render(); });
+      bindChecks();
       on('f-file', async e => {
         collectLog();
         for (const f of e.target.files) {
@@ -1442,6 +1737,10 @@ function bind() {
     }
     if (state.sub === 'list') {
       on('q', e => { state.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); q.focus(); q.setSelectionRange(pos, pos); }, 'input');
+      on('l-from', e => { state.lFrom = e.target.value; render(); }, 'change'); on('l-to', e => { state.lTo = e.target.value; render(); }, 'change');
+      on('l-imp', e => { state.impOnly = e.target.checked; render(); }, 'change');
+      on('l-clear', () => { state.q = ''; state.lFrom = ''; state.lTo = ''; state.impOnly = false; render(); });
+      on('l-csv', () => exportLogCSV(true));
       document.querySelectorAll('[data-open]').forEach(el => el.onclick = () => startLog(el.dataset.open));
     }
   }
@@ -1462,8 +1761,13 @@ function bind() {
   }
 }
 function bindRes() {
-  document.querySelectorAll('[data-rr]').forEach(b => b.onclick = () => { collectLog(); form.log.results.splice(+b.dataset.rr, 1); $('#res').innerHTML = resRowsHTML(); bindRes(); });
-  const add = $('#f-addres'); if (add) add.onclick = () => { collectLog(); form.log.results.push({ tradeId: '', inQty: '', setQty: '' }); $('#res').innerHTML = resRowsHTML(); bindRes(); };
+  const redraw = () => { $('#res').innerHTML = resRowsHTML(); bindRes(); const ch = $('#chk'); if (ch) { ch.innerHTML = checksHTML(); bindChecks(); } saveDraft(); };
+  document.querySelectorAll('[data-rr]').forEach(b => b.onclick = () => { collectLog(); form.log.results.splice(+b.dataset.rr, 1); redraw(); });
+  const add = $('#f-addres'); if (add) add.onclick = () => { collectLog(); form.log.results.push({ tradeId: '', inQty: '', setQty: '' }); redraw(); const i = form.log.results.length - 1; tradePicker('', id => { collectLog(); form.log.results[i].tradeId = id; redraw(); }); };
+  document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { collectLog(); const i = +b.dataset.pick; tradePicker(form.log.results[i].tradeId, id => { collectLog(); form.log.results[i].tradeId = id; redraw(); const c = document.querySelector(`.rcard[data-ri="${i}"] .r-set`); if (c) c.focus(); }); });
+  document.querySelectorAll('.r-in,.r-set').forEach(e => e.addEventListener('input', updResCalc));
+  const d = $('#f-date'); if (d && !d._rc) { d._rc = 1; d.addEventListener('change', () => { collectLog(); updResCalc(); }); }
+  updResCalc();
 }
 function bindPhotoRm() {
   document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => {
@@ -1493,6 +1797,7 @@ $('#hd-home').onclick = () => go('home');
     await reload();
     const m = await dbGet('meta', 'lastBackup'); lastBackup = m ? m.v : 0;
     const hc = await dbGet('meta', 'hbChecked'); hbChecked = hc ? hc.v : 0;
+    for (const h of cache.hbs) if (!h.no && h.fname) { const inf = parseHbName(h.fname); if (inf.no && !cache.hbs.some(x => x.no === inf.no)) { Object.assign(h, { no: inf.no, title: inf.title, rev: inf.rev, date: inf.date }); await dbPut('hbs', h); } }
     const tp = await dbGet('meta', 'starTpl'); if (tp && Array.isArray(tp.v) && tp.v.length) starTpl = tp.v;
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
   } catch (e) { dbError = e.message || '알 수 없는 오류'; db = null; }
