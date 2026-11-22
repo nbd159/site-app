@@ -808,6 +808,9 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigat
 
 /* ---------- 도면 (보기 · 마킹 · 개정) ---------- */
 let pdfLib = null;
+if (typeof ReadableStream !== 'undefined' && !ReadableStream.prototype[Symbol.asyncIterator]) {
+  ReadableStream.prototype[Symbol.asyncIterator] = async function* () { const r = this.getReader(); try { for (;;) { const { done, value } = await r.read(); if (done) return; yield value; } } finally { r.releaseLock(); } };
+}
 async function getPdfLib() {
   if (pdfLib) return pdfLib;
   if (location.protocol === 'file:') throw new Error('PDF는 설치(홈 화면 추가)한 앱에서 열 수 있어요');

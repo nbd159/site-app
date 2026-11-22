@@ -1,3 +1,4 @@
+/* iPad Safari 보완: ReadableStream 반복 지원 */if(typeof ReadableStream!=="undefined"&&!ReadableStream.prototype[Symbol.asyncIterator]){ReadableStream.prototype[Symbol.asyncIterator]=async function*(){const r=this.getReader();try{for(;;){const{done:d,value:v}=await r.read();if(d)return;yield v}}finally{r.releaseLock()}}}
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page
