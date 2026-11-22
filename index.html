@@ -144,9 +144,20 @@ function openDB() {
 }
 const store = (s, m = 'readonly') => db.transaction(s, m).objectStore(s);
 const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
-const dbAll = s => req(store(s).getAll());
-const dbGet = (s, k) => req(store(s).get(k));
-const dbPut = (s, v) => req(store(s, 'readwrite').put(v));
+/* iPad Safari는 파일(File/Blob)을 저장소에 바로 넣으면 실패할 때가 있어 ArrayBuffer로 바꿔 저장한다 */
+async function packBlobs(v) {
+  if (v && v.blob instanceof Blob) { v = Object.assign({}, v); v.buf = await v.blob.arrayBuffer(); v.btype = v.blob.type || v.type || ''; delete v.blob; }
+  if (v && Array.isArray(v.photos) && v.photos.some(p => p && p.blob instanceof Blob)) { v = Object.assign({}, v); v.photos = await Promise.all(v.photos.map(packBlobs)); }
+  return v;
+}
+function unpackBlobs(v) {
+  if (v && v.buf instanceof ArrayBuffer && !v.blob) v.blob = new Blob([v.buf], { type: v.btype || '' });
+  if (v && Array.isArray(v.photos)) v.photos.forEach(unpackBlobs);
+  return v;
+}
+const dbAll = async s => (await req(store(s).getAll())).map(unpackBlobs);
+const dbGet = async (s, k) => unpackBlobs(await req(store(s).get(k)));
+const dbPut = async (s, v) => { const pv = await packBlobs(v); return req(store(s, 'readwrite').put(pv)); };
 const dbDel = (s, k) => req(store(s, 'readwrite').delete(k));
 
 const cache = { logs: [], journals: [], trades: [], drawings: [], manuals: [], stars: [], specs: [], hbs: [] };
